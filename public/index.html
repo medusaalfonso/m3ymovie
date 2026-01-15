@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>وصول المشاهدة | وين ياخذنا الريح 2026</title>
+
+    <!-- Arabic-friendly font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>
+      :root{
+        --bg0:#06070b;
+        --bg1:#0b0e17;
+        --card:#0e1220cc;
+        --stroke:#242a3f;
+        --text:#e9ecf7;
+        --muted:#aab2d3;
+        --accent:#7c5cff;
+        --accent2:#23d5ab;
+        --danger:#ff4d6d;
+        --ok:#2dd4bf;
+        --shadow: 0 24px 70px rgba(0,0,0,.55);
+        --radius: 18px;
+      }
+
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; }
+      body{
+        margin:0;
+        font-family:"Tajawal", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+        color:var(--text);
+        background:
+          radial-gradient(1200px 600px at 75% 20%, rgba(124,92,255,.25), transparent 55%),
+          radial-gradient(900px 500px at 15% 80%, rgba(35,213,171,.16), transparent 60%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:28px 14px;
+      }
+
+      .wrap{
+        width:min(980px, 100%);
+        display:grid;
+        grid-template-columns: 1.05fr .95fr;
+        gap:18px;
+      }
+
+      .panel{
+        border:1px solid var(--stroke);
+        background: linear-gradient(180deg, rgba(14,18,32,.88), rgba(14,18,32,.62));
+        box-shadow: var(--shadow);
+        border-radius: var(--radius);
+        overflow:hidden;
+        position:relative;
+      }
+
+      .panel::before{
+        content:"";
+        position:absolute;
+        inset:-2px;
+        background: linear-gradient(135deg, rgba(124,92,255,.35), rgba(35,213,171,.22), rgba(124,92,255,.12));
+        filter: blur(18px);
+        opacity:.35;
+        pointer-events:none;
+      }
+
+      .inner{
+        position:relative;
+        padding:26px 22px;
+      }
+
+      .badge{
+        display:inline-flex;
+        gap:10px;
+        align-items:center;
+        padding:8px 12px;
+        border:1px solid rgba(255,255,255,.08);
+        background: rgba(255,255,255,.04);
+        border-radius: 999px;
+        color:var(--muted);
+        font-size:14px;
+      }
+      .dot{
+        width:10px;height:10px;border-radius:50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        box-shadow: 0 0 0 4px rgba(124,92,255,.12);
+      }
+
+      h1{
+        margin:14px 0 6px;
+        font-size:34px;
+        line-height:1.25;
+        letter-spacing:.2px;
+      }
+      .subtitle{
+        margin:0 0 16px;
+        color:var(--muted);
+        font-size:16px;
+        line-height:1.7;
+      }
+
+      .infoBox{
+        margin-top:14px;
+        border:1px solid rgba(255,255,255,.08);
+        background: rgba(0,0,0,.22);
+        border-radius: 16px;
+        padding:14px 14px;
+      }
+      .infoTitle{
+        margin:0 0 8px;
+        font-weight:800;
+        letter-spacing:.2px;
+        display:flex;
+        align-items:center;
+        gap:10px;
+      }
+      .pill{
+        font-size:12px;
+        padding:4px 10px;
+        border-radius:999px;
+        border:1px solid rgba(255,255,255,.10);
+        color:var(--muted);
+        background: rgba(255,255,255,.04);
+      }
+      .infoText{
+        margin:0;
+        color:#d7dcf3;
+        line-height:1.9;
+        font-size:15px;
+      }
+
+      .steps{
+        display:grid;
+        gap:10px;
+        margin-top:10px;
+      }
+      .step{
+        border:1px solid rgba(255,255,255,.08);
+        background: rgba(255,255,255,.03);
+        border-radius:16px;
+        padding:14px 14px;
+      }
+      .step b{ display:block; margin-bottom:6px; }
+      .step p{ margin:0; color:var(--muted); line-height:1.8; }
+
+      .k{
+        display:inline-block;
+        border:1px solid rgba(255,255,255,.12);
+        background: rgba(0,0,0,.25);
+        padding:2px 8px;
+        border-radius:10px;
+        color:#dfe6ff;
+        font-weight:700;
+        font-size:13px;
+      }
+
+      .form{
+        display:flex;
+        flex-direction:column;
+        gap:12px;
+        margin-top:14px;
+      }
+
+      .label{
+        color:var(--muted);
+        font-size:14px;
+      }
+
+      .input{
+        width:100%;
+        padding:14px 14px;
+        border-radius:14px;
+        border:1px solid rgba(255,255,255,.10);
+        background: rgba(0,0,0,.28);
+        color:var(--text);
+        outline:none;
+        font-size:16px;
+        letter-spacing:.7px;
+        transition: border .15s ease, box-shadow .15s ease;
+      }
+      .input:focus{
+        border-color: rgba(124,92,255,.6);
+        box-shadow: 0 0 0 4px rgba(124,92,255,.15);
+      }
+
+      .btn{
+        border:0;
+        border-radius:14px;
+        padding:13px 14px;
+        font-weight:800;
+        color:#071018;
+        cursor:pointer;
+        font-size:16px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        box-shadow: 0 16px 30px rgba(124,92,255,.18);
+        transition: transform .08s ease, filter .15s ease;
+      }
+      .btn:hover{ filter: brightness(1.05); }
+      .btn:active{ transform: translateY(1px); }
+      .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+      .msg{
+        min-height:22px;
+        font-size:14px;
+        color:var(--muted);
+      }
+      .msg.err{ color: #ff7a92; }
+      .msg.ok{ color: #62f6d8; }
+
+      /* Telegram button */
+      .telegram-btn{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        margin-top:14px;
+        padding:14px 16px;
+        border-radius:16px;
+        border:1px solid rgba(255,255,255,.10);
+        background: rgba(0,0,0,.28);
+        color:#e9ecf7;
+        text-decoration:none;
+        font-weight:800;
+        transition: transform .08s ease, background .15s ease, border .15s ease;
+      }
+      .telegram-btn:hover{
+        background: rgba(255,255,255,.06);
+        border-color: rgba(124,92,255,.5);
+      }
+      .telegram-icon{
+        width:28px;
+        height:28px;
+        display:grid;
+        place-items:center;
+        border-radius:50%;
+        background: linear-gradient(135deg, #2AABEE, #229ED9);
+        box-shadow: 0 0 0 4px rgba(42,171,238,.15);
+        flex: 0 0 28px;
+      }
+      .telegram-icon svg{
+        width:16px;
+        height:16px;
+        fill:white;
+      }
+      .telegram-meta{
+        display:flex;
+        flex-direction:column;
+        gap:2px;
+        line-height:1.35;
+      }
+      .telegram-meta small{
+        color:var(--muted);
+        font-weight:600;
+      }
+
+      @media (max-width: 880px){
+        .wrap{ grid-template-columns:1fr; }
+        h1{ font-size:30px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <!-- Left: Film info -->
+      <section class="panel" aria-label="معلومات الفيلم">
+        <div class="inner">
+          <span class="badge"><span class="dot"></span> عرض خاص • دخول عبر رمز سري</span>
+          <h1>وين ياخذنا الريح 2026</h1>
+          <p class="subtitle">
+            للوصول إلى المشاهدة، اطلب رمز الدخول من بوت تيليجرام ثم أدخله هنا.
+          </p>
+
+          <div class="infoBox">
+            <div class="infoTitle">
+              <span>نبذة عن الفيلم</span>
+              <span class="pill">دراما • رحلة • جربة</span>
+            </div>
+            <p class="infoText">
+              تستخدم أليسا، الفتاة المتمردة البالغة من العمر 19 عامًا، وصديقها المقرب مهدي،
+              الشاب الخجول والمنطوي البالغ من العمر 23 عامًا، خيالهما للهروب من واقعهما الكئيب.
+              وفي أحد الأيام، يكتشفان مسابقة في جربة قد تغير حياتهما. فيقرران القيام برحلة برية،
+              مهما كانت العقبات.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Access -->
+      <section class="panel" aria-label="الدخول">
+        <div class="inner">
+          <h1 style="font-size:26px;margin-top:0;">الدخول إلى المشاهدة</h1>
+
+          <div class="steps">
+            <div class="step">
+              <b>1) احصل على الرمز</b>
+              <p>افتح تيليجرام وأرسل للبوت الأمر <span class="k">/code</span> ليصلك رمز صالح لمدة قصيرة.</p>
+            </div>
+            <div class="step">
+              <b>2) أدخل الرمز هنا</b>
+              <p>الصق الرمز كما هو (مثال: <span class="k">ABCD-EFGH-IJKL-MNOP</span>) ثم اضغط دخول.</p>
+            </div>
+          </div>
+
+          <!-- Telegram CTA (EDIT YOUR BOT USERNAME HERE) -->
+          <a
+            href="https://t.me/windsmoviebot"
+            target="_blank"
+            rel="noopener"
+            class="telegram-btn"
+            aria-label="افتح بوت تيليجرام للحصول على رمز الدخول"
+          >
+            <span class="telegram-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M9.993 15.674 9.7 20.3c.43 0 .62-.184.85-.41l2.04-1.95 4.22 3.09c.77.42 1.32.2 1.51-.71l2.74-12.87h.01c.24-1.13-.41-1.58-1.16-1.3L2.96 9.24c-1.09.43-1.08 1.04-.2 1.31l4.56 1.42 10.59-6.68c.5-.31.96-.14.58.17"/>
+              </svg>
+            </span>
+            <span class="telegram-meta">
+              <span>اذهب إلى البوت للحصول على الرمز</span>
+              <small>@windsmoviebot</small>
+            </span>
+          </a>
+
+          <div class="form">
+            <div class="label">رمز الدخول</div>
+            <input id="code" class="input" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="one-time-code" />
+            <button id="btn" class="btn">دخول</button>
+            <div class="msg" id="msg"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const msg = document.getElementById("msg");
+      const btn = document.getElementById("btn");
+      const codeInput = document.getElementById("code");
+
+      btn.onclick = async () => {
+        msg.className = "msg";
+        msg.textContent = "جارٍ التحقق...";
+        btn.disabled = true;
+
+        try {
+          const code = codeInput.value;
+
+          const res = await fetch("/.netlify/functions/redeem", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            msg.className = "msg err";
+            msg.textContent = data.error || "تعذّر التحقق من الرمز.";
+            return;
+          }
+
+          msg.className = "msg ok";
+          msg.textContent = "تمّ الدخول بنجاح! يتم تحويلك الآن...";
+          setTimeout(() => (window.location.href = "/watch.html"), 450);
+        } catch (e) {
+          msg.className = "msg err";
+          msg.textContent = "حدث خطأ: " + (e?.message || e);
+        } finally {
+          btn.disabled = false;
+        }
+      };
+    </script>
+  </body>
+</html>
