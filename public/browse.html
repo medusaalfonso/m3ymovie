@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>المكتبة | وين ياخذنا الريح 2026</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#06070b; --bg1:#0b0e17; --stroke:#242a3f;
+      --text:#e9ecf7; --muted:#aab2d3; --accent:#7c5cff; --accent2:#23d5ab;
+      --shadow: 0 24px 70px rgba(0,0,0,.55); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Tajawal,Arial,sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 75% 20%, rgba(124,92,255,.25), transparent 55%),
+        radial-gradient(900px 500px at 15% 80%, rgba(35,213,171,.16), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      padding:22px 14px;
+    }
+    .wrap{max-width:1100px;margin:0 auto}
+    .top{
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    h1{margin:0;font-size:26px}
+    .sub{margin:6px 0 0;color:var(--muted);line-height:1.8}
+    .search{
+      min-width:260px; flex: 0 0 320px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding:12px 12px; border-radius:14px; outline:none;
+    }
+    .grid{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    .card{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(14,18,32,.88), rgba(14,18,32,.62));
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding:14px;
+    }
+    .title{font-weight:800; font-size:16px; line-height:1.5; margin:0 0 10px;}
+    .btn{
+      width:100%;
+      border:0;
+      border-radius:14px;
+      padding:11px 12px;
+      font-weight:800;
+      color:#071018;
+      cursor:pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+    .msg{color:var(--muted); margin-top:10px; min-height:20px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>المكتبة</h1>
+        <div class="sub">اختر فيلمًا للبدء بالمشاهدة.</div>
+      </div>
+      <input id="q" class="search" placeholder="ابحث عن فيلم..." />
+    </div>
+
+    <div id="grid" class="grid"></div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const msg = document.getElementById("msg");
+    const q = document.getElementById("q");
+
+    let items = [];
+
+    function render(list){
+      grid.innerHTML = "";
+      for (const it of list){
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerHTML = `
+          <div class="title">${escapeHtml(it.title)}</div>
+          <button class="btn">مشاهدة</button>
+        `;
+        el.querySelector("button").onclick = () => {
+          location.href = `/watch.html?id=${encodeURIComponent(it.id)}`;
+        };
+        grid.appendChild(el);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[m]));
+    }
+
+    async function load(){
+      // تأكد مسجل دخول
+      const me = await fetch("/.netlify/functions/me").then(r=>r.json());
+      if (!me.loggedIn) { location.href="/"; return; }
+
+      msg.textContent = "جارٍ تحميل القائمة...";
+      const res = await fetch("/.netlify/functions/catalog");
+      const data = await res.json();
+      if (!res.ok){ msg.textContent = data.error || "فشل تحميل القائمة"; return; }
+
+      items = data.items || [];
+      msg.textContent = items.length ? `تم تحميل ${items.length} عنصر.` : "القائمة فارغة.";
+      render(items);
+    }
+
+    q.addEventListener("input", () => {
+      const s = q.value.trim().toLowerCase();
+      if (!s) return render(items);
+      render(items.filter(x => x.title.toLowerCase().includes(s)));
+    });
+
+    load();
+  </script>
+</body>
+</html>

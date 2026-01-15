@@ -363,7 +363,7 @@
 
           msg.className = "msg ok";
           msg.textContent = "تمّ الدخول بنجاح! يتم تحويلك الآن...";
-          setTimeout(() => (window.location.href = "/watch.html"), 450);
+          setTimeout(() => (window.location.href = "/browse.html"), 450);
         } catch (e) {
           msg.className = "msg err";
           msg.textContent = "حدث خطأ: " + (e?.message || e);
