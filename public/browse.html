@@ -51,6 +51,22 @@
       background: rgba(124,92,255,.18);
     }
 
+    #genreBar{display:none; gap:10px; flex-wrap:wrap; margin:0 0 14px}
+    .genrePill{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      border-radius:999px;
+      padding:8px 12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+    }
+    .genrePill.active{
+      border-color: rgba(124,92,255,.55);
+      background: rgba(124,92,255,.18);
+    }
+
     .grid{display:grid; gap:14px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));}
 
     .card{
@@ -69,27 +85,40 @@
       background: rgba(14,18,32,.78);
     }
 
-    /* Movie poster */
     .poster{width:100%; aspect-ratio:2/3; background:#000; position:relative; overflow:hidden;}
     .poster img{width:100%;height:100%;object-fit:cover;display:block;}
     .poster::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%, rgba(0,0,0,.70));pointer-events:none;}
+
     .meta{padding:10px 10px 12px;}
     .title{margin:0;font-weight:800;font-size:14px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
     .hint{margin-top:6px;color:var(--muted);font-size:12px;}
-    .playBadge{
+
+    .badge{
       position:absolute; top:10px; left:10px;
       padding:6px 10px; border-radius:999px;
       background: rgba(0,0,0,.55);
       border: 1px solid rgba(255,255,255,.12);
-      font-size:12px; font-weight:800; color:#fff;
+      font-size:12px; font-weight:900; color:#fff;
       display:flex; gap:6px; align-items:center;
       backdrop-filter: blur(8px);
     }
 
-    /* Series card */
-    .seriesBox{padding:14px;}
-    .seriesName{margin:0;font-size:16px;font-weight:900;line-height:1.6;}
-    .seriesCount{margin-top:8px;color:var(--muted);font-size:13px;}
+    .genreBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      color:#fff;
+      font-weight:900;
+      font-size:12px;
+      position:absolute;
+      bottom:10px;
+      right:10px;
+      backdrop-filter: blur(8px);
+    }
 
     /* Modal */
     .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50;}
@@ -118,6 +147,7 @@
       display:flex; justify-content:space-between; align-items:center; gap:10px;
     }
     .epBtn:hover{border-color: rgba(124,92,255,.45); background: rgba(255,255,255,.04);}
+
     .msg{color:var(--muted); margin-top:12px; min-height:20px}
   </style>
 </head>
@@ -136,11 +166,12 @@
       <button id="tabSeries" class="tab">مسلسلات</button>
     </div>
 
+    <div id="genreBar"></div>
+
     <div id="grid" class="grid"></div>
     <div id="msg" class="msg"></div>
   </div>
 
-  <!-- Series modal -->
   <div id="backdrop" class="backdrop">
     <div class="modal">
       <div class="modalTop">
@@ -157,6 +188,7 @@
     const q = document.getElementById("q");
     const tabMovies = document.getElementById("tabMovies");
     const tabSeries = document.getElementById("tabSeries");
+    const genreBar = document.getElementById("genreBar");
 
     const backdrop = document.getElementById("backdrop");
     const modalTitle = document.getElementById("modalTitle");
@@ -166,6 +198,8 @@
     let mode = "movies";
     let movies = [];
     let series = [];
+    let seriesGenres = [];
+    let selectedSeriesGenre = "ALL";
 
     function escapeHtml(s){
       return String(s).replace(/[&<>"']/g, m => ({
@@ -178,7 +212,41 @@
       tabMovies.classList.toggle("active", mode === "movies");
       tabSeries.classList.toggle("active", mode === "series");
       q.value = "";
+      genreBar.style.display = (mode === "series") ? "flex" : "none";
       render();
+    }
+
+    function setActiveGenre(label){
+      const pills = genreBar.querySelectorAll(".genrePill");
+      pills.forEach(p => p.classList.remove("active"));
+      for (const p of pills){
+        if (p.textContent === label) p.classList.add("active");
+      }
+    }
+
+    function buildGenreBar(){
+      genreBar.innerHTML = "";
+      const allBtn = document.createElement("button");
+      allBtn.className = "genrePill active";
+      allBtn.textContent = "الكل";
+      allBtn.onclick = () => {
+        selectedSeriesGenre = "ALL";
+        setActiveGenre("الكل");
+        render();
+      };
+      genreBar.appendChild(allBtn);
+
+      for (const g of seriesGenres){
+        const b = document.createElement("button");
+        b.className = "genrePill";
+        b.textContent = g;
+        b.onclick = () => {
+          selectedSeriesGenre = g;
+          setActiveGenre(g);
+          render();
+        };
+        genreBar.appendChild(b);
+      }
     }
 
     function render(){
@@ -198,7 +266,7 @@
           el.innerHTML = `
             <div class="poster">
               ${img}
-              <div class="playBadge">▶ مشاهدة</div>
+              <div class="badge">▶ مشاهدة</div>
             </div>
             <div class="meta">
               <p class="title">${escapeHtml(it.title)}</p>
@@ -210,18 +278,27 @@
 
         msg.textContent = list.length ? `الأفلام: ${list.length}` : "لا توجد نتائج.";
       } else {
-        const list = term ? series.filter(x => (x.title||"").toLowerCase().includes(term)) : series;
+        const list0 = term ? series.filter(x => (x.title||"").toLowerCase().includes(term)) : series;
+        const list = (selectedSeriesGenre === "ALL")
+          ? list0
+          : list0.filter(x => (x.genre || "").trim() === selectedSeriesGenre);
 
         for (const s of list){
           const el = document.createElement("div");
           el.className = "card";
           el.onclick = () => openSeries(s);
 
+          const img = s.image ? `<img loading="lazy" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}">` : "";
+
           el.innerHTML = `
-            <div class="seriesBox">
-              <p class="seriesName">${escapeHtml(s.title)}</p>
-              <div class="seriesCount">${s.count} حلقة</div>
-              <div class="hint">اضغط لعرض الحلقات</div>
+            <div class="poster">
+              ${img}
+              <div class="badge">📺 حلقات</div>
+              ${s.genre ? `<div class="genreBadge">${escapeHtml(s.genre)}</div>` : ""}
+            </div>
+            <div class="meta">
+              <p class="title">${escapeHtml(s.title)}</p>
+              <div class="hint">${s.count} حلقة • اضغط لعرض الحلقات</div>
             </div>
           `;
           grid.appendChild(el);
@@ -240,11 +317,9 @@
         b.className = "epBtn";
         b.innerHTML = `
           <span>${escapeHtml(ep.title)}</span>
-          <span style="color:#aab2d3;font-weight:700;">▶</span>
+          <span style="color:#aab2d3;font-weight:900;">▶</span>
         `;
-        b.onclick = () => {
-          location.href = `/watch.html?id=${encodeURIComponent(ep.id)}`;
-        };
+        b.onclick = () => location.href = `/watch.html?id=${encodeURIComponent(ep.id)}`;
         epsEl.appendChild(b);
       }
 
@@ -256,7 +331,6 @@
 
     tabMovies.onclick = () => setMode("movies");
     tabSeries.onclick = () => setMode("series");
-
     q.addEventListener("input", render);
 
     async function load(){
@@ -274,6 +348,8 @@
 
       movies = data.movies || [];
       series = data.series || [];
+      seriesGenres = data.seriesGenres || [];
+      buildGenreBar();
 
       setMode("movies");
       msg.textContent = "جاهز.";
