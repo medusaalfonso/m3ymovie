@@ -12,16 +12,26 @@ function makeId(title, url) {
 function parseCatalog(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
+
   for (const line of lines) {
-    const parts = line.split("|");
+    const parts = line.split("|").map(p => p.trim()).filter(Boolean);
     if (parts.length < 2) continue;
 
-    const title = parts[0].trim();
-    const url = parts.slice(1).join("|").trim();
+    const title = parts[0];
+    const url = parts[1];
+    const image = parts[2] || ""; // optional
 
     if (!title || !url) continue;
-    items.push({ id: makeId(title, url), title, url, type: "movie" });
+
+    items.push({
+      id: makeId(title, url),
+      title,
+      url,
+      image,
+      type: "movie"
+    });
   }
+
   return items;
 }
 
@@ -32,8 +42,6 @@ exports.handler = async (event) => {
     try { verifySession(cookie); }
     catch { return json(401, { error: "Invalid session" }); }
 
-    // ✅ Correct path for your setup: functions/data/catalog.txt
-    // __dirname points to the deployed functions directory
     const filePath = path.join(__dirname, "data", "catalog.txt");
     const raw = await fs.readFile(filePath, "utf-8");
 
