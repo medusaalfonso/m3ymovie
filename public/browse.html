@@ -103,4 +103,183 @@
     }
     .modalTop{padding:14px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;gap:10px;align-items:center}
     .modalTitle{margin:0;font-size:16px;font-weight:900}
-    .closeBtn{border:1px solid rgba(255,255,255,.10);backgroun
+    .closeBtn{border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.25);color:var(--text);border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900}
+    .eps{max-height:60vh;overflow:auto;padding:12px 14px;display:grid;gap:10px}
+    .epBtn{
+      width:100%;
+      text-align:right;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      border-radius:14px;
+      padding:12px 12px;
+      cursor:pointer;
+      font-weight:800;
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+    }
+    .epBtn:hover{border-color: rgba(124,92,255,.45); background: rgba(255,255,255,.04);}
+    .msg{color:var(--muted); margin-top:12px; min-height:20px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>المكتبة</h1>
+        <div class="sub">أفلام ومسلسلات — اختر ما تريد.</div>
+      </div>
+      <input id="q" class="search" placeholder="ابحث..." />
+    </div>
+
+    <div class="tabs">
+      <button id="tabMovies" class="tab active">أفلام</button>
+      <button id="tabSeries" class="tab">مسلسلات</button>
+    </div>
+
+    <div id="grid" class="grid"></div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <!-- Series modal -->
+  <div id="backdrop" class="backdrop">
+    <div class="modal">
+      <div class="modalTop">
+        <h3 id="modalTitle" class="modalTitle"></h3>
+        <button id="closeBtn" class="closeBtn">إغلاق</button>
+      </div>
+      <div id="eps" class="eps"></div>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const msg = document.getElementById("msg");
+    const q = document.getElementById("q");
+    const tabMovies = document.getElementById("tabMovies");
+    const tabSeries = document.getElementById("tabSeries");
+
+    const backdrop = document.getElementById("backdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const epsEl = document.getElementById("eps");
+    const closeBtn = document.getElementById("closeBtn");
+
+    let mode = "movies";
+    let movies = [];
+    let series = [];
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[m]));
+    }
+
+    function setMode(m){
+      mode = m;
+      tabMovies.classList.toggle("active", mode === "movies");
+      tabSeries.classList.toggle("active", mode === "series");
+      q.value = "";
+      render();
+    }
+
+    function render(){
+      const term = q.value.trim().toLowerCase();
+      grid.innerHTML = "";
+
+      if (mode === "movies") {
+        const list = term ? movies.filter(x => (x.title||"").toLowerCase().includes(term)) : movies;
+
+        for (const it of list){
+          const el = document.createElement("div");
+          el.className = "card";
+          el.onclick = () => location.href = `/watch.html?id=${encodeURIComponent(it.id)}`;
+
+          const img = it.image ? `<img loading="lazy" src="${escapeHtml(it.image)}" alt="${escapeHtml(it.title)}">` : "";
+
+          el.innerHTML = `
+            <div class="poster">
+              ${img}
+              <div class="playBadge">▶ مشاهدة</div>
+            </div>
+            <div class="meta">
+              <p class="title">${escapeHtml(it.title)}</p>
+              <div class="hint">اضغط للتشغيل</div>
+            </div>
+          `;
+          grid.appendChild(el);
+        }
+
+        msg.textContent = list.length ? `الأفلام: ${list.length}` : "لا توجد نتائج.";
+      } else {
+        const list = term ? series.filter(x => (x.title||"").toLowerCase().includes(term)) : series;
+
+        for (const s of list){
+          const el = document.createElement("div");
+          el.className = "card";
+          el.onclick = () => openSeries(s);
+
+          el.innerHTML = `
+            <div class="seriesBox">
+              <p class="seriesName">${escapeHtml(s.title)}</p>
+              <div class="seriesCount">${s.count} حلقة</div>
+              <div class="hint">اضغط لعرض الحلقات</div>
+            </div>
+          `;
+          grid.appendChild(el);
+        }
+
+        msg.textContent = list.length ? `المسلسلات: ${list.length}` : "لا توجد نتائج.";
+      }
+    }
+
+    function openSeries(s){
+      modalTitle.textContent = s.title;
+      epsEl.innerHTML = "";
+
+      for (const ep of (s.episodes || [])) {
+        const b = document.createElement("button");
+        b.className = "epBtn";
+        b.innerHTML = `
+          <span>${escapeHtml(ep.title)}</span>
+          <span style="color:#aab2d3;font-weight:700;">▶</span>
+        `;
+        b.onclick = () => {
+          location.href = `/watch.html?id=${encodeURIComponent(ep.id)}`;
+        };
+        epsEl.appendChild(b);
+      }
+
+      backdrop.style.display = "flex";
+    }
+
+    closeBtn.onclick = () => backdrop.style.display = "none";
+    backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.style.display = "none"; };
+
+    tabMovies.onclick = () => setMode("movies");
+    tabSeries.onclick = () => setMode("series");
+
+    q.addEventListener("input", render);
+
+    async function load(){
+      const me = await fetch("/.netlify/functions/me").then(r=>r.json());
+      if (!me.loggedIn) { location.href="/"; return; }
+
+      msg.textContent = "جارٍ تحميل القائمة...";
+      const res = await fetch("/.netlify/functions/catalog");
+      const data = await res.json();
+
+      if (!res.ok){
+        msg.textContent = data.error || "فشل تحميل القائمة";
+        return;
+      }
+
+      movies = data.movies || [];
+      series = data.series || [];
+
+      setMode("movies");
+      msg.textContent = "جاهز.";
+    }
+
+    load();
+  </script>
+</body>
+</html>
