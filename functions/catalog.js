@@ -8,23 +8,22 @@ function hashId(s) {
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return h.toString(16);
 }
+function makeMovieId(title, url) { return "m_" + hashId(title + "|" + url); }
+function makeSeriesId(seriesTitle) { return "s_" + hashId(seriesTitle); }
+function makeEpisodeId(seriesTitle, epLabel, url) { return "e_" + hashId(seriesTitle + "|" + epLabel + "|" + url); }
 
-function makeMovieId(title, url) {
-  return "m_" + hashId(title + "|" + url);
-}
-function makeSeriesId(seriesTitle) {
-  return "s_" + hashId(seriesTitle);
-}
-function makeEpisodeId(seriesTitle, epLabel, url) {
-  return "e_" + hashId(seriesTitle + "|" + epLabel + "|" + url);
+function cleanParts(line) {
+  return line.split("|").map(p => p.trim()).filter(p => p.length > 0);
 }
 
+// Movies format:
+// Title | HLS_URL | Image_URL (optional)
 function parseMovies(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
 
   for (const line of lines) {
-    const parts = line.split("|").map(p => p.trim()).filter(Boolean);
+    const parts = cleanParts(line);
     if (parts.length < 2) continue;
 
     const title = parts[0];
@@ -38,71 +37,84 @@ function parseMovies(text) {
       title,
       url,
       image,
-      type: "movie"
+      type: "movie",
     });
   }
   return items;
 }
 
 function extractEpisodeNumber(epLabel) {
-  // Works with: "EP Episode 01", "Episode 2", "EP 03", etc.
   const m = String(epLabel || "").match(/(\d{1,3})/);
   return m ? parseInt(m[1], 10) : null;
 }
 
+// Series format (your new):
+// SeriesName | Episode 17 | HLS_URL | SeriesImageURL | Genre
 function parseSeries(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-
-  // Map seriesTitle -> {id,title,episodes:[]}
   const map = new Map();
 
   for (const line of lines) {
-    const parts = line.split("|").map(p => p.trim()).filter(Boolean);
+    const parts = cleanParts(line);
     if (parts.length < 3) continue;
 
     const seriesTitle = parts[0];
-    const epLabel = parts[1];      // "EP  Episode 01"
+    const epLabel = parts[1];
     const url = parts[2];
+    const seriesImage = parts[3] || "";
+    const genre = parts[4] || "";
 
     if (!seriesTitle || !epLabel || !url) continue;
 
-    const seriesId = makeSeriesId(seriesTitle);
-    const epNum = extractEpisodeNumber(epLabel);
-    const episodeTitle = epNum ? `الحلقة ${String(epNum).padStart(2, "0")}` : epLabel;
-
-    const episode = {
-      id: makeEpisodeId(seriesTitle, epLabel, url),
-      seriesId,
-      seriesTitle,
-      title: episodeTitle,
-      ep: epNum,
-      url
-    };
-
     if (!map.has(seriesTitle)) {
-      map.set(seriesTitle, { id: seriesId, title: seriesTitle, episodes: [] });
+      map.set(seriesTitle, {
+        id: makeSeriesId(seriesTitle),
+        title: seriesTitle,
+        image: seriesImage || "",
+        genre: genre || "",
+        episodes: [],
+      });
     }
-    map.get(seriesTitle).episodes.push(episode);
+
+    const s = map.get(seriesTitle);
+    if (!s.image && seriesImage) s.image = seriesImage;
+    if (!s.genre && genre) s.genre = genre;
+
+    const epNum = extractEpisodeNumber(epLabel);
+    const epTitle = epNum != null
+      ? `الحلقة ${String(epNum).padStart(2, "0")}`
+      : epLabel;
+
+    s.episodes.push({
+      id: makeEpisodeId(seriesTitle, epLabel, url),
+      seriesId: s.id,
+      seriesTitle,
+      title: epTitle,
+      ep: epNum,
+      url,
+    });
   }
 
-  // Sort episodes and create final list
   const out = [];
   for (const s of map.values()) {
     s.episodes.sort((a, b) => {
-      if (a.ep == null && b.ep == null) return a.title.localeCompare(b.title);
+      if (a.ep == null && b.ep == null) return a.title.localeCompare(b.title, "ar");
       if (a.ep == null) return 1;
       if (b.ep == null) return -1;
       return a.ep - b.ep;
     });
+
     out.push({
       id: s.id,
       title: s.title,
+      image: s.image || "",
+      genre: s.genre || "",
       count: s.episodes.length,
-      episodes: s.episodes
+      episodes: s.episodes,
+      type: "series",
     });
   }
 
-  // Sort series alphabetically
   out.sort((a, b) => a.title.localeCompare(b.title, "ar"));
   return out;
 }
@@ -119,13 +131,17 @@ exports.handler = async (event) => {
 
     const [moviesRaw, seriesRaw] = await Promise.all([
       fs.readFile(moviesPath, "utf-8").catch(() => ""),
-      fs.readFile(seriesPath, "utf-8").catch(() => "")
+      fs.readFile(seriesPath, "utf-8").catch(() => ""),
     ]);
 
     const movies = moviesRaw ? parseMovies(moviesRaw) : [];
     const series = seriesRaw ? parseSeries(seriesRaw) : [];
 
-    return json(200, { movies, series });
+    const seriesGenres = Array.from(
+      new Set(series.map(s => (s.genre || "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, "ar"));
+
+    return json(200, { movies, series, seriesGenres });
   } catch (e) {
     return json(500, { error: e.message || String(e) });
   }
