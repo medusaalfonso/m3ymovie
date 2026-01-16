@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>المكتبة | وين ياخذنا الريح 2026</title>
+  <title>المكتبة</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
     :root{
       --bg0:#06070b; --bg1:#0b0e17; --stroke:#242a3f;
       --text:#e9ecf7; --muted:#aab2d3; --accent:#7c5cff; --accent2:#23d5ab;
-      --shadow: 0 24px 70px rgba(0,0,0,.55); --radius:18px;
+      --shadow: 0 20px 60px rgba(0,0,0,.55); --radius:18px;
     }
     *{box-sizing:border-box}
     body{
@@ -24,7 +24,7 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       padding:22px 14px;
     }
-    .wrap{max-width:1100px;margin:0 auto}
+    .wrap{max-width:1200px;margin:0 auto}
     .top{
       display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
       margin-bottom:14px;
@@ -32,35 +32,91 @@
     h1{margin:0;font-size:26px}
     .sub{margin:6px 0 0;color:var(--muted);line-height:1.8}
     .search{
-      min-width:260px; flex: 0 0 320px;
+      min-width:260px; flex: 0 0 340px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.25);
       color:var(--text);
       padding:12px 12px; border-radius:14px; outline:none;
     }
+
     .grid{
-      display:grid; gap:12px;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      display:grid; gap:14px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     }
+
     .card{
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(14,18,32,.88), rgba(14,18,32,.62));
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(14,18,32,.65);
       box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      padding:14px;
-    }
-    .title{font-weight:800; font-size:16px; line-height:1.5; margin:0 0 10px;}
-    .btn{
-      width:100%;
-      border:0;
-      border-radius:14px;
-      padding:11px 12px;
-      font-weight:800;
-      color:#071018;
+      border-radius: 18px;
+      overflow:hidden;
       cursor:pointer;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      transition: transform .12s ease, border .15s ease, background .15s ease;
+      position:relative;
     }
-    .msg{color:var(--muted); margin-top:10px; min-height:20px}
+    .card:hover{
+      transform: translateY(-2px);
+      border-color: rgba(124,92,255,.45);
+      background: rgba(14,18,32,.78);
+    }
+
+    .poster{
+      width:100%;
+      aspect-ratio: 2 / 3;
+      background:#000;
+      position:relative;
+      overflow:hidden;
+    }
+    .poster img{
+      width:100%; height:100%;
+      object-fit: cover;
+      display:block;
+      filter: saturate(1.05) contrast(1.02);
+    }
+    .poster::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.70));
+      pointer-events:none;
+    }
+
+    .meta{
+      padding:10px 10px 12px;
+    }
+    .title{
+      margin:0;
+      font-weight:800;
+      font-size:14px;
+      line-height:1.6;
+      display:-webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .hint{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .playBadge{
+      position:absolute;
+      top:10px; left:10px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      font-size:12px;
+      font-weight:800;
+      color:#fff;
+      display:flex;
+      gap:6px;
+      align-items:center;
+      backdrop-filter: blur(8px);
+    }
+
+    .msg{color:var(--muted); margin-top:12px; min-height:20px}
   </style>
 </head>
 <body>
@@ -70,7 +126,7 @@
         <h1>المكتبة</h1>
         <div class="sub">اختر فيلمًا للبدء بالمشاهدة.</div>
       </div>
-      <input id="q" class="search" placeholder="ابحث عن فيلم..." />
+      <input id="q" class="search" placeholder="ابحث..." />
     </div>
 
     <div id="grid" class="grid"></div>
@@ -81,24 +137,7 @@
     const grid = document.getElementById("grid");
     const msg = document.getElementById("msg");
     const q = document.getElementById("q");
-
     let items = [];
-
-    function render(list){
-      grid.innerHTML = "";
-      for (const it of list){
-        const el = document.createElement("div");
-        el.className = "card";
-        el.innerHTML = `
-          <div class="title">${escapeHtml(it.title)}</div>
-          <button class="btn">مشاهدة</button>
-        `;
-        el.querySelector("button").onclick = () => {
-          location.href = `/watch.html?id=${encodeURIComponent(it.id)}`;
-        };
-        grid.appendChild(el);
-      }
-    }
 
     function escapeHtml(s){
       return String(s).replace(/[&<>"']/g, m => ({
@@ -106,15 +145,41 @@
       }[m]));
     }
 
+    function render(list){
+      grid.innerHTML = "";
+      for (const it of list){
+        const el = document.createElement("div");
+        el.className = "card";
+        el.onclick = () => location.href = `/watch.html?id=${encodeURIComponent(it.id)}`;
+
+        const img = it.image ? `<img loading="lazy" src="${escapeHtml(it.image)}" alt="${escapeHtml(it.title)}">` : "";
+
+        el.innerHTML = `
+          <div class="poster">
+            ${img}
+            <div class="playBadge">▶ مشاهدة</div>
+          </div>
+          <div class="meta">
+            <p class="title">${escapeHtml(it.title)}</p>
+            <div class="hint">اضغط للتشغيل</div>
+          </div>
+        `;
+        grid.appendChild(el);
+      }
+    }
+
     async function load(){
-      // تأكد مسجل دخول
       const me = await fetch("/.netlify/functions/me").then(r=>r.json());
       if (!me.loggedIn) { location.href="/"; return; }
 
       msg.textContent = "جارٍ تحميل القائمة...";
       const res = await fetch("/.netlify/functions/catalog");
       const data = await res.json();
-      if (!res.ok){ msg.textContent = data.error || "فشل تحميل القائمة"; return; }
+
+      if (!res.ok){
+        msg.textContent = data.error || "فشل تحميل القائمة";
+        return;
+      }
 
       items = data.items || [];
       msg.textContent = items.length ? `تم تحميل ${items.length} عنصر.` : "القائمة فارغة.";
@@ -124,7 +189,7 @@
     q.addEventListener("input", () => {
       const s = q.value.trim().toLowerCase();
       if (!s) return render(items);
-      render(items.filter(x => x.title.toLowerCase().includes(s)));
+      render(items.filter(x => (x.title || "").toLowerCase().includes(s)));
     });
 
     load();
