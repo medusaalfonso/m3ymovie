@@ -8,278 +8,445 @@
   <style>
     :root{
       --bg:#0b0f17;
-      --panel:#0f1624;
-      --text:#e7edf6;
-      --muted:#9bb0c7;
-      --border:rgba(255,255,255,.08);
+      --card:#0f1626;
+      --card2:#121c30;
+      --text:#e7ecff;
+      --muted:#a8b2d1;
+      --border:rgba(255,255,255,.10);
       --accent:#7c5cff;
-      --shadow: 0 18px 60px rgba(0,0,0,.5);
-      --radius: 18px;
+      --danger:#ef4444;
+      --ok:#22c55e;
     }
-    *{ box-sizing:border-box; }
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
-      background:
-        radial-gradient(900px 500px at 85% 10%, rgba(124,92,255,.18), transparent 60%),
-        radial-gradient(900px 500px at 10% 10%, rgba(34,197,94,.10), transparent 55%),
-        linear-gradient(180deg, var(--bg), #070a11 60%, #060810);
-      color: var(--text);
-      min-height:100vh;
+      background: radial-gradient(1100px 700px at 80% 10%, rgba(124,92,255,.16), transparent 60%),
+                  radial-gradient(900px 500px at 10% 20%, rgba(34,197,94,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial;
+      direction: rtl;
     }
-
-    .wrap{
-      width:min(1100px, 92vw);
-      margin:0 auto;
-      padding: 18px 0 50px;
+    .container{max-width:1150px;margin:0 auto;padding:22px}
+    .nav{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 18px;border:1px solid var(--border);
+      background:rgba(15,22,38,.7);backdrop-filter: blur(10px);
+      border-radius:16px;
     }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:12px;
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(34,197,94,.75));
+      box-shadow: 0 12px 40px rgba(124,92,255,.25);
     }
+    .brand h1{font-size:16px;margin:0}
+    .brand p{margin:0;color:var(--muted);font-size:12px}
 
     .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
       border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
+      background: rgba(18,28,48,.7);
       color:var(--text);
-      padding:10px 12px;
-      border-radius: 14px;
+      padding:10px 12px;border-radius:12px;
       cursor:pointer;
-      transition:.15s ease;
-      font-weight:800;
+      user-select:none;
       text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,.22);
     }
-    .btn:hover{ transform: translateY(-1px); border-color: rgba(124,92,255,.35); }
+    .btn:hover{border-color: rgba(124,92,255,.45)}
+    .btn.primary{background:rgba(124,92,255,.22);border-color: rgba(124,92,255,.35)}
 
-    .titlebox{
+    .layout{display:grid;grid-template-columns: 1.6fr .8fr;gap:16px;margin-top:16px}
+    @media (max-width: 980px){ .layout{grid-template-columns:1fr} }
+
+    .panel{
       border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      border-radius: var(--radius);
-      padding: 12px 14px;
-      box-shadow: var(--shadow);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      margin-bottom: 12px;
+      background: linear-gradient(180deg, rgba(18,28,48,.75), rgba(15,22,38,.85));
+      border-radius:18px;
+      padding:14px;
+      box-shadow: 0 16px 60px rgba(0,0,0,.32);
     }
-    .titlebox h1{
-      margin:0;
-      font-size: 16px;
-      font-weight: 950;
-      line-height:1.35;
-    }
-    .titlebox .meta{
-      color: var(--muted);
-      font-size: 12px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .pill{
-      font-size:11px;
-      font-weight:900;
-      padding:4px 8px;
-      border-radius: 999px;
+
+    .titleRow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .titleRow h2{margin:0;font-size:18px;line-height:1.5}
+    .small{color:var(--muted);font-size:12px;line-height:1.7}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;color:var(--muted);
       border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
+      padding:6px 8px;border-radius:999px;
+      width:fit-content;
     }
-    .pill.purple{ border-color: rgba(124,92,255,.4); color: rgba(214,206,255,.98); }
 
-    .player-wrap{
+    .playerWrap{margin-top:12px;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:#000}
+    video{width:100%;height:auto;display:block;background:#000}
+
+    .posterBox{
+      display:flex;gap:12px;align-items:flex-start;
+    }
+    .poster{
+      width:92px;aspect-ratio:2/3;border-radius:14px;overflow:hidden;
       border:1px solid var(--border);
-      background: rgba(255,255,255,.02);
-      border-radius: 22px;
-      overflow:hidden;
-      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.05);
+      flex:0 0 auto;
     }
+    .poster img{width:100%;height:100%;object-fit:cover;display:block}
 
-    .ratio{
-      width:100%;
-      aspect-ratio: 16/9;
-      background: #000;
-      position:relative;
-    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .row .btn{flex:0 0 auto}
 
-    video, iframe{
-      width:100%;
-      height:100%;
-      display:block;
-      background:#000;
-    }
-
-    .note{
-      margin-top: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      border-radius: var(--radius);
-      padding: 12px 14px;
-      color: var(--muted);
-      font-size: 13px;
-      box-shadow: var(--shadow);
-    }
     .err{
-      color: #fecaca;
+      margin-top:10px;
+      border:1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.08);
+      color:#ffd6d6;
+      padding:10px 12px;border-radius:14px;
+      display:none;
     }
+
+    .ok{
+      margin-top:10px;
+      border:1px solid rgba(34,197,94,.35);
+      background: rgba(34,197,94,.08);
+      color:#d7ffe7;
+      padding:10px 12px;border-radius:14px;
+      display:none;
+    }
+
+    .trackList{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+    .trackItem{
+      border:1px solid var(--border);
+      background: rgba(18,28,48,.55);
+      padding:10px 12px;
+      border-radius:14px;
+      display:flex;justify-content:space-between;gap:10px;align-items:center;
+    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <a class="btn" href="/browse.html">⬅ رجوع للمكتبة</a>
-      <button class="btn" id="copyLink">🔗 نسخ رابط الصفحة</button>
-    </div>
-
-    <div class="titlebox">
-      <div>
-        <h1 id="t">—</h1>
-        <div class="meta" id="m"></div>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>المشاهدة</h1>
+          <p id="subTitle">مشغل الفيديو</p>
+        </div>
       </div>
-      <span class="pill purple" id="kind">—</span>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn" href="/browse.html">⬅ رجوع للمكتبة</a>
+      </div>
     </div>
 
-    <div class="player-wrap">
-      <div class="ratio" id="playerHost"></div>
-    </div>
+    <div class="layout">
+      <!-- LEFT: player -->
+      <div class="panel">
+        <div class="titleRow">
+          <h2 id="title">...</h2>
+          <span class="badge" id="typeBadge">HLS</span>
+        </div>
+        <div class="small" id="meta">—</div>
 
-    <div class="note" id="note">
-      إذا الفيديو لا يشتغل: جرّب تغيير المتصفح أو تأكد أن رابط m3u8 صحيح.
+        <div class="playerWrap">
+          <video id="video" controls playsinline crossorigin="anonymous"></video>
+        </div>
+
+        <div class="row">
+          <button class="btn" onclick="toggleSubtitles()">📝 تشغيل/إيقاف الترجمة</button>
+          <button class="btn" onclick="makeFullscreen()">⛶ ملء الشاشة</button>
+          <button class="btn primary" onclick="retry()">🔄 إعادة التحميل</button>
+        </div>
+
+        <div class="ok" id="okBox"></div>
+        <div class="err" id="errBox"></div>
+      </div>
+
+      <!-- RIGHT: info -->
+      <div class="panel">
+        <div class="posterBox">
+          <div class="poster"><img id="poster" alt="poster"></div>
+          <div>
+            <div class="badge">🎞️ معلومات</div>
+            <div class="small" style="margin-top:8px">
+              إذا لم يعمل الفيديو:
+              <br>• تأكد أن الرابط <span class="mono">m3u8</span> صحيح
+              <br>• بعض الروابط تمنع التشغيل بسبب CORS
+              <br>• جرّب رابط مختلف أو استخدم Bunny player embed
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <div class="badge">🗂️ الترجمة</div>
+          <div class="trackList" id="trackList"></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Hls.js (for m3u8 on browsers that don't support native HLS like Chrome/Windows) -->
+  <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 
   <script>
-    const $ = (id) => document.getElementById(id);
+    const PLACEHOLDER = "https://via.placeholder.com/600x900?text=Poster";
 
-    const params = new URLSearchParams(location.search);
-    const type = (params.get("type") || "").toLowerCase();
-    const src = params.get("src") || "";
-    const title = params.get("title") || "المشاهدة";
-    const poster = params.get("poster") || "";
+    const video = document.getElementById("video");
+    const titleEl = document.getElementById("title");
+    const metaEl = document.getElementById("meta");
+    const typeBadge = document.getElementById("typeBadge");
+    const posterEl = document.getElementById("poster");
+    const trackListEl = document.getElementById("trackList");
+    const okBox = document.getElementById("okBox");
+    const errBox = document.getElementById("errBox");
 
-    // subtitles: allow repeated "sub" params:
-    // sub = vttUrl|label|lang|default
-    // example: sub=https://x/sub.vtt|عربي|ar|1
-    const subs = params.getAll("sub").map(s => {
-      const parts = (s || "").split("|").map(x => x.trim());
-      return {
-        url: parts[0] || "",
-        label: parts[1] || "Subtitles",
-        lang: parts[2] || "en",
-        isDefault: parts[3] === "1"
-      };
-    }).filter(x => x.url);
+    let hls = null;
+    let lastSrc = null;
 
-    $("t").textContent = title;
-    $("kind").textContent =
-      type === "bunny" ? "Bunny" :
-      type === "dailymotion" ? "Dailymotion" :
-      "HLS";
+    function showOk(msg){
+      okBox.style.display = "block";
+      okBox.textContent = msg;
+    }
+    function hideOk(){ okBox.style.display = "none"; okBox.textContent = ""; }
 
-    // meta pills
-    const meta = [];
-    if (poster) meta.push(`<span class="pill">Poster ✅</span>`);
-    if (subs.length) meta.push(`<span class="pill">ترجمة: ${subs.length}</span>`);
-    $("m").innerHTML = meta.join("");
+    function showErr(msg){
+      errBox.style.display = "block";
+      errBox.textContent = msg;
+    }
+    function hideErr(){ errBox.style.display = "none"; errBox.textContent = ""; }
 
-    $("copyLink").onclick = async () => {
-      try{
-        await navigator.clipboard.writeText(location.href);
-        $("note").textContent = "✅ تم نسخ رابط الصفحة.";
-        setTimeout(() => $("note").textContent = "إذا الفيديو لا يشتغل: جرّب تغيير المتصفح أو تأكد أن رابط m3u8 صحيح.", 1200);
-      }catch(e){
-        $("note").innerHTML = `<span class="err">تعذر النسخ تلقائياً. انسخ الرابط يدوياً من شريط المتصفح.</span>`;
+    function escapeHtml(str){
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // Parse subtitles from URL:
+    // ?sub=<url>|<label>|<lang>|<isDefault>
+    function parseSubsFromQuery(params){
+      const subs = params.getAll("sub");
+      const tracks = [];
+
+      for (const raw of subs){
+        const parts = String(raw).split("|");
+        const url = (parts[0] || "").trim();
+        if (!url) continue;
+
+        const label = (parts[1] || "Subtitles").trim();
+        const lang  = (parts[2] || "en").trim();
+        const isDefault = (parts[3] || "0").trim() === "1";
+
+        tracks.push({ url, label, lang, isDefault });
       }
-    };
 
-    function showError(msg){
-      $("note").innerHTML = `<span class="err">${msg}</span>`;
+      return tracks;
     }
 
-    function embedIframe(url){
-      const host = $("playerHost");
-      host.innerHTML = `
-        <iframe
-          src="${url}"
-          frameborder="0"
-          allow="autoplay; fullscreen"
-          allowfullscreen
-          referrerpolicy="no-referrer"
-        ></iframe>
-      `;
+    function clearTracks(){
+      // remove <track> from DOM
+      [...video.querySelectorAll("track")].forEach(t => t.remove());
+      trackListEl.innerHTML = "";
     }
 
-    function playHls(url){
-      const host = $("playerHost");
-      host.innerHTML = `
-        <video id="v" controls playsinline ${poster ? `poster="${poster}"` : ""}></video>
-      `;
+    function addTracks(tracks){
+      clearTracks();
 
-      const v = document.getElementById("v");
+      if (!tracks.length){
+        trackListEl.innerHTML = `<div class="small">لا توجد ترجمة مضافة.</div>`;
+        return;
+      }
 
-      // Attach subtitle tracks (VTT)
-      // Note: Some browsers only show track menu when captions are valid + same-origin/CORS allows fetching.
-      subs.forEach(s => {
-        const tr = document.createElement("track");
-        tr.kind = "subtitles";
-        tr.label = s.label;
-        tr.srclang = s.lang;
-        tr.src = s.url;
-        if (s.isDefault) tr.default = true;
-        v.appendChild(tr);
+      tracks.forEach((t, idx) => {
+        const track = document.createElement("track");
+        track.kind = "subtitles";
+        track.label = t.label;
+        track.srclang = t.lang;
+        track.src = t.url;
+
+        // default track
+        if (t.isDefault) track.default = true;
+
+        video.appendChild(track);
+
+        const row = document.createElement("div");
+        row.className = "trackItem";
+        row.innerHTML = `
+          <div>
+            <div>${escapeHtml(t.label)} <span class="small">(${escapeHtml(t.lang)})</span></div>
+            <div class="small mono" style="direction:ltr;text-align:left;word-break:break-all">${escapeHtml(t.url)}</div>
+          </div>
+          <button class="btn" onclick="selectSubtitle(${idx})">اختيار</button>
+        `;
+        trackListEl.appendChild(row);
       });
 
-      // Native HLS (Safari) OR Hls.js (Chrome/Windows)
-      if (v.canPlayType("application/vnd.apple.mpegurl")) {
-        v.src = url;
-        v.play().catch(()=>{});
+      // Force browser to re-evaluate tracks
+      setTimeout(() => {
+        // if there is default track, enable it
+        const textTracks = video.textTracks;
+        let chosen = -1;
+        for (let i=0;i<textTracks.length;i++){
+          if (tracks[i] && tracks[i].isDefault) { chosen = i; break; }
+        }
+        if (chosen >= 0) {
+          selectSubtitle(chosen);
+        } else {
+          // turn them off by default (you can change this behavior)
+          for (let i=0;i<textTracks.length;i++) textTracks[i].mode = "disabled";
+        }
+      }, 200);
+    }
+
+    // Select one subtitle track by index
+    window.selectSubtitle = function(i){
+      const tt = video.textTracks;
+      for (let k=0;k<tt.length;k++){
+        tt[k].mode = (k === i) ? "showing" : "disabled";
+      }
+      showOk("✅ تم اختيار الترجمة: " + (tt[i]?.label || ""));
+      setTimeout(hideOk, 2200);
+    };
+
+    window.toggleSubtitles = function(){
+      const tt = video.textTracks;
+      if (!tt || tt.length === 0){
+        showErr("لا توجد ترجمة.");
+        setTimeout(hideErr, 2200);
+        return;
+      }
+      // if any showing -> disable all, else show first
+      let anyShowing = false;
+      for (let i=0;i<tt.length;i++){
+        if (tt[i].mode === "showing") { anyShowing = true; break; }
+      }
+      for (let i=0;i<tt.length;i++){
+        tt[i].mode = anyShowing ? "disabled" : (i===0 ? "showing" : "disabled");
+      }
+      showOk(anyShowing ? "تم إيقاف الترجمة" : "تم تشغيل الترجمة");
+      setTimeout(hideOk, 2200);
+    };
+
+    window.makeFullscreen = function(){
+      const el = video;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    };
+
+    function destroyHls(){
+      if (hls){
+        try{ hls.destroy(); }catch(e){}
+        hls = null;
+      }
+    }
+
+    function isProbablyM3U8(url){
+      return /\.m3u8(\?|$)/i.test(url) || url.includes("application/vnd.apple.mpegurl");
+    }
+
+    function loadHls(src){
+      destroyHls();
+
+      lastSrc = src;
+
+      // If browser supports native HLS (Safari), use it.
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = src;
         return;
       }
 
-      if (window.Hls && window.Hls.isSupported()) {
-        const hls = new Hls({
-          maxBufferLength: 30,
-          backBufferLength: 30,
-        });
-        hls.loadSource(url);
-        hls.attachMedia(v);
+      if (!window.Hls || !Hls.isSupported()){
+        throw new Error("HLS.js غير مدعوم في هذا المتصفح");
+      }
 
-        hls.on(Hls.Events.ERROR, function (event, data) {
-          if (data && data.fatal) {
-            showError("خطأ في تشغيل HLS: " + (data.details || "unknown"));
-            try { hls.destroy(); } catch(e){}
-          }
-        });
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 90
+      });
 
-        v.addEventListener("play", () => v.play().catch(()=>{}));
+      hls.on(Hls.Events.ERROR, function (event, data) {
+        // Common reason: CORS blocked, 403, etc.
+        if (data && data.fatal) {
+          showErr("❌ خطأ في تشغيل HLS. ممكن السبب: CORS / رابط غير صالح / منع من السيرفر.");
+        }
+      });
+
+      hls.loadSource(src);
+      hls.attachMedia(video);
+    }
+
+    function setPageInfo(params){
+      const t = params.get("title") || "مشاهدة";
+      const type = params.get("type") || "hls";
+      const series = params.get("series") || "";
+      const ep = params.get("ep") || "";
+
+      titleEl.textContent = t;
+
+      let meta = [];
+      if (series) meta.push("المسلسل: " + series);
+      if (ep) meta.push("الحلقة: " + ep);
+      metaEl.textContent = meta.length ? meta.join(" • ") : "—";
+
+      typeBadge.textContent = (type || "HLS").toUpperCase();
+      posterEl.src = params.get("poster") || PLACEHOLDER;
+    }
+
+    function loadFromUrl(){
+      hideErr(); hideOk();
+
+      const params = new URLSearchParams(location.search);
+      const src = params.get("src");
+
+      setPageInfo(params);
+
+      if (!src){
+        showErr("لا يوجد رابط فيديو في الصفحة (src).");
         return;
       }
 
-      showError("متصفحك لا يدعم تشغيل m3u8. جرّب Chrome/Edge حديث أو Safari.");
+      const tracks = parseSubsFromQuery(params);
+      addTracks(tracks);
+
+      // Decide load method
+      if (isProbablyM3U8(src)){
+        try{
+          loadHls(src);
+          showOk("✅ تم تحميل m3u8");
+          setTimeout(hideOk, 1600);
+        }catch(e){
+          showErr("❌ " + (e.message || String(e)));
+        }
+      } else {
+        // fallback: mp4 or other direct
+        destroyHls();
+        lastSrc = src;
+        video.src = src;
+        showOk("✅ تم تحميل الفيديو");
+        setTimeout(hideOk, 1600);
+      }
     }
 
-    // --- Main ---
-    if (!src) {
-      showError("لا يوجد رابط فيديو (src).");
-    } else if (type === "bunny" || type === "dailymotion") {
-      embedIframe(src);
-    } else {
-      // default HLS
-      playHls(src);
-    }
+    window.retry = function(){
+      if (!lastSrc){
+        loadFromUrl();
+        return;
+      }
+      loadFromUrl();
+    };
+
+    // Show errors from <video>
+    video.addEventListener("error", () => {
+      showErr("❌ فشل تشغيل الفيديو. ممكن السبب: الرابط لا يعمل أو CORS.");
+    });
+
+    // Start
+    loadFromUrl();
   </script>
 </body>
 </html>
