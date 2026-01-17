@@ -16,8 +16,9 @@ function cleanParts(line) {
   return line.split("|").map(p => p.trim()).filter(p => p.length > 0);
 }
 
-// Movies format:
-// Title | HLS_URL | Image_URL (optional)
+/** Movies format:
+ *  Title | VIDEO_URL (m3u8 OR mp4) | Image_URL (optional) | Category (optional)
+ */
 function parseMovies(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
@@ -29,6 +30,7 @@ function parseMovies(text) {
     const title = parts[0];
     const url = parts[1];
     const image = parts[2] || "";
+    const category = parts[3] || "أفلام";
 
     if (!title || !url) continue;
 
@@ -37,9 +39,11 @@ function parseMovies(text) {
       title,
       url,
       image,
+      category,
       type: "movie",
     });
   }
+
   return items;
 }
 
@@ -48,8 +52,9 @@ function extractEpisodeNumber(epLabel) {
   return m ? parseInt(m[1], 10) : null;
 }
 
-// Series format (your new):
-// SeriesName | Episode 17 | HLS_URL | SeriesImageURL | Genre
+/** Series format:
+ *  Series Name | Episode 17 | HLS_URL | SeriesImageURL | Genre
+ */
 function parseSeries(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const map = new Map();
@@ -81,9 +86,7 @@ function parseSeries(text) {
     if (!s.genre && genre) s.genre = genre;
 
     const epNum = extractEpisodeNumber(epLabel);
-    const epTitle = epNum != null
-      ? `الحلقة ${String(epNum).padStart(2, "0")}`
-      : epLabel;
+    const epTitle = epNum != null ? `الحلقة ${String(epNum).padStart(2, "0")}` : epLabel;
 
     s.episodes.push({
       id: makeEpisodeId(seriesTitle, epLabel, url),
@@ -137,11 +140,15 @@ exports.handler = async (event) => {
     const movies = moviesRaw ? parseMovies(moviesRaw) : [];
     const series = seriesRaw ? parseSeries(seriesRaw) : [];
 
+    const movieCategories = Array.from(
+      new Set(movies.map(m => (m.category || "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, "ar"));
+
     const seriesGenres = Array.from(
       new Set(series.map(s => (s.genre || "").trim()).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, "ar"));
 
-    return json(200, { movies, series, seriesGenres });
+    return json(200, { movies, series, movieCategories, seriesGenres });
   } catch (e) {
     return json(500, { error: e.message || String(e) });
   }
