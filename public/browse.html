@@ -3,393 +3,550 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>المكتبة</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-
+  <title>المكتبة | أفلام ومسلسلات</title>
+  <meta name="description" content="مكتبة أفلام ومسلسلات بواجهة عربية داكنة" />
   <style>
     :root{
-      --bg0:#06070b; --bg1:#0b0e17; --stroke:#242a3f;
-      --text:#e9ecf7; --muted:#aab2d3; --accent:#7c5cff; --accent2:#23d5ab;
-      --shadow: 0 20px 60px rgba(0,0,0,.55); --radius:18px;
+      --bg:#0b0f17;
+      --card:#0f1626;
+      --card2:#121c30;
+      --text:#e7ecff;
+      --muted:#a8b2d1;
+      --border:rgba(255,255,255,.08);
+      --accent:#7c5cff;
+      --accent2:#22c55e;
+      --danger:#ef4444;
     }
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
-      margin:0; font-family:Tajawal,Arial,sans-serif; color:var(--text);
-      background:
-        radial-gradient(1200px 600px at 75% 20%, rgba(124,92,255,.25), transparent 55%),
-        radial-gradient(900px 500px at 15% 80%, rgba(35,213,171,.16), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      padding:22px 14px;
-    }
-    .wrap{max-width:1200px;margin:0 auto}
-    .top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
-    h1{margin:0;font-size:26px}
-    .sub{margin:6px 0 0;color:var(--muted);line-height:1.8}
-    .search{
-      min-width:260px; flex: 0 0 340px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.25);
+      margin:0;
+      background: radial-gradient(1200px 700px at 80% 10%, rgba(124,92,255,.18), transparent 60%),
+                  radial-gradient(900px 500px at 10% 20%, rgba(34,197,94,.10), transparent 55%),
+                  var(--bg);
       color:var(--text);
-      padding:12px 12px; border-radius:14px; outline:none;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial;
+      direction: rtl;
     }
-
-    .tabs{display:flex;gap:10px; margin:10px 0 12px}
-    .tab{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.25);
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1150px;margin:0 auto;padding:22px}
+    .nav{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 18px;border:1px solid var(--border);
+      background:rgba(15,22,38,.7);backdrop-filter: blur(10px);
+      border-radius:16px;
+    }
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(34,197,94,.75));
+      box-shadow: 0 12px 40px rgba(124,92,255,.25);
+    }
+    .brand h1{font-size:16px;margin:0}
+    .brand p{margin:0;color:var(--muted);font-size:12px}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      border:1px solid var(--border);
+      background: rgba(18,28,48,.7);
       color:var(--text);
-      border-radius:999px;
-      padding:10px 14px;
+      padding:10px 12px;border-radius:12px;
       cursor:pointer;
-      font-weight:900;
-    }
-    .tab.active{
-      border-color: rgba(124,92,255,.55);
-      background: rgba(124,92,255,.18);
-    }
-
-    /* Filter bars */
-    #movieCatBar, #seriesGenreBar{
-      display:none;
-      gap:10px;
-      flex-wrap:wrap;
-      margin:0 0 14px;
-    }
-    .pill{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.25);
-      color: var(--text);
-      border-radius:999px;
-      padding:8px 12px;
-      cursor:pointer;
-      font-weight:900;
-      font-size:13px;
       user-select:none;
     }
-    .pill.active{
-      border-color: rgba(124,92,255,.55);
-      background: rgba(124,92,255,.18);
+    .btn:hover{border-color: rgba(124,92,255,.45)}
+    .btn.primary{background:rgba(124,92,255,.22);border-color: rgba(124,92,255,.35)}
+    .btn.ghost{background:transparent}
+
+    .hero{
+      margin-top:18px;
+      padding:18px;border-radius:18px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(18,28,48,.65), rgba(15,22,38,.65));
     }
+    .hero h2{margin:0 0 8px;font-size:22px}
+    .hero p{margin:0;color:var(--muted);line-height:1.7}
 
-    .grid{display:grid; gap:14px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));}
-
-    .card{
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(14,18,32,.65);
-      box-shadow: var(--shadow);
-      border-radius: 18px;
-      overflow:hidden;
+    .tabs{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .tab{
+      padding:10px 12px;border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(15,22,38,.6);
+      color:var(--text);
       cursor:pointer;
-      transition: transform .12s ease, border .15s ease, background .15s ease;
-      position:relative;
+      user-select:none;
     }
-    .card:hover{
-      transform: translateY(-2px);
-      border-color: rgba(124,92,255,.45);
-      background: rgba(14,18,32,.78);
+    .tab.active{border-color: rgba(124,92,255,.45);background: rgba(124,92,255,.14)}
+
+    .searchRow{
+      margin-top:12px;
+      display:flex;gap:10px;flex-wrap:wrap;
     }
+    .searchRow input{
+      flex:1;min-width:240px;
+      padding:12px 12px;border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(15,22,38,.6);
+      color:var(--text);
+      outline:none;
+    }
+    .searchRow input::placeholder{color:rgba(168,178,209,.7)}
 
-    .poster{width:100%; aspect-ratio:2/3; background:#000; position:relative; overflow:hidden;}
-    .poster img{width:100%;height:100%;object-fit:cover;display:block;}
-    .poster::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%, rgba(0,0,0,.70));pointer-events:none;}
-
-    .meta{padding:10px 10px 12px;}
-    .title{margin:0;font-weight:900;font-size:14px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-    .hint{margin-top:6px;color:var(--muted);font-size:12px;}
-
+    .grid{
+      margin-top:16px;
+      display:grid;gap:14px;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    }
+    .card{
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(18,28,48,.8), rgba(15,22,38,.85));
+      border-radius:16px;overflow:hidden;
+      box-shadow: 0 14px 50px rgba(0,0,0,.28);
+      display:flex;flex-direction:column;
+      min-height: 100%;
+    }
+    .poster{aspect-ratio: 2/3;background: rgba(255,255,255,.05)}
+    .poster img{width:100%;height:100%;object-fit:cover;display:block}
+    .meta{padding:12px;display:flex;flex-direction:column;gap:10px}
+    .meta h3{margin:0;font-size:14px;line-height:1.4}
+    .small{color:var(--muted);font-size:12px;line-height:1.6}
     .badge{
-      position:absolute; top:10px; left:10px;
-      padding:6px 10px; border-radius:999px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      font-size:12px; font-weight:900; color:#fff;
-      display:flex; gap:6px; align-items:center;
-      backdrop-filter: blur(8px);
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;color:var(--muted);
+      border:1px solid var(--border);
+      padding:6px 8px;border-radius:999px;
+      width:fit-content;
     }
 
-    .genreBadge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      color:#fff;
-      font-weight:900;
-      font-size:12px;
-      position:absolute;
-      bottom:10px;
-      right:10px;
-      backdrop-filter: blur(8px);
+    .panel{
+      margin-top:16px;
+      border:1px solid var(--border);
+      background: rgba(15,22,38,.65);
+      border-radius:16px;
+      padding:14px;
     }
-
-    /* Modal */
-    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50;}
-    .modal{
-      width:min(620px, 100%);
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(14,18,32,.92);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
+    .panelHeader{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      margin-bottom:10px;
     }
-    .modalTop{padding:14px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;gap:10px;align-items:center}
-    .modalTitle{margin:0;font-size:16px;font-weight:900}
-    .closeBtn{border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.25);color:var(--text);border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900}
-    .eps{max-height:60vh;overflow:auto;padding:12px 14px;display:grid;gap:10px}
+    .panelHeader h3{margin:0;font-size:16px}
+    .episodes{
+      display:flex;flex-direction:column;gap:10px;
+      margin-top:10px;
+    }
     .epBtn{
       width:100%;
-      text-align:right;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.25);
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:12px 12px;border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(18,28,48,.55);
       color:var(--text);
-      border-radius:14px;
-      padding:12px 12px;
       cursor:pointer;
-      font-weight:900;
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      text-align:right;
     }
-    .epBtn:hover{border-color: rgba(124,92,255,.45); background: rgba(255,255,255,.04);}
-
-    .msg{color:var(--muted); margin-top:12px; min-height:20px}
+    .epBtn:hover{border-color: rgba(124,92,255,.45)}
+    .footerNote{margin-top:18px;color:rgba(168,178,209,.75);font-size:12px}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1>المكتبة</h1>
-        <div class="sub">أفلام ومسلسلات — اختر ما تريد.</div>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>مكتبتي</h1>
+          <p>أفلام ومسلسلات بواجهة عربية</p>
+        </div>
       </div>
-      <input id="q" class="search" placeholder="ابحث..." />
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <!-- Optional: link to your Telegram bot -->
+        <a class="btn" id="botLink" href="#" target="_blank" rel="noopener">🤖 البوت</a>
+        <a class="btn primary" href="/index.html">تسجيل الدخول</a>
+      </div>
     </div>
 
-    <div class="tabs">
-      <button id="tabMovies" class="tab active">أفلام</button>
-      <button id="tabSeries" class="tab">مسلسلات</button>
+    <div class="hero">
+      <h2>اختر شيئًا لتشاهده 🍿</h2>
+      <p>
+        تصفّح <b>الأفلام</b> و<b>المسلسلات</b> و<b>المسلسلات الأجنبية</b>.
+        استخدم البحث للوصول بسرعة لأي عنوان.
+      </p>
+
+      <div class="tabs">
+        <button class="tab active" id="tab-films" onclick="setTab('films')">الأفلام</button>
+        <button class="tab" id="tab-series" onclick="setTab('series')">المسلسلات</button>
+        <button class="tab" id="tab-foreign" onclick="setTab('foreign')">مسلسلات أجنبية</button>
+      </div>
+
+      <div class="searchRow">
+        <input id="q" type="search" placeholder="ابحث بالاسم..." oninput="applySearch()" />
+        <button class="btn" onclick="refreshCurrent()">🔄 تحديث</button>
+      </div>
     </div>
 
-    <!-- Movies categories -->
-    <div id="movieCatBar"></div>
+    <!-- Main content -->
+    <div id="content" class="grid"></div>
 
-    <!-- Series genres -->
-    <div id="seriesGenreBar"></div>
-
-    <div id="grid" class="grid"></div>
-    <div id="msg" class="msg"></div>
-  </div>
-
-  <!-- Series modal -->
-  <div id="backdrop" class="backdrop">
-    <div class="modal">
-      <div class="modalTop">
-        <h3 id="modalTitle" class="modalTitle"></h3>
-        <button id="closeBtn" class="closeBtn">إغلاق</button>
-      </div>
-      <div id="eps" class="eps"></div>
+    <div class="footerNote">
+      ملاحظة: إذا كان رابط m3u8 لا يعمل، غالباً المشكلة من المصدر (CORS/Token/Geo). جرّب مصدر آخر.
     </div>
   </div>
 
   <script>
-    const grid = document.getElementById("grid");
-    const msg = document.getElementById("msg");
-    const q = document.getElementById("q");
-    const tabMovies = document.getElementById("tabMovies");
-    const tabSeries = document.getElementById("tabSeries");
+    // ====== CONFIG ======
+    // Put your bot username here (without @) if you want the "Bot" button to work.
+    const TELEGRAM_BOT_USERNAME = ""; // e.g. "YourBotName"
 
-    const movieCatBar = document.getElementById("movieCatBar");
-    const seriesGenreBar = document.getElementById("seriesGenreBar");
+    const API = {
+      films: "/.netlify/functions/catalog",
+      series: "/.netlify/functions/series",
+      foreign: "/.netlify/functions/foreignSeries"
+    };
 
-    const backdrop = document.getElementById("backdrop");
-    const modalTitle = document.getElementById("modalTitle");
-    const epsEl = document.getElementById("eps");
-    const closeBtn = document.getElementById("closeBtn");
+    // ====== STATE ======
+    let currentTab = "films";
+    let filmsCache = [];
+    let seriesCache = [];
+    let foreignCache = [];
 
-    let mode = "movies";
-    let movies = [];
-    let series = [];
-
-    let movieCategories = [];
-    let seriesGenres = [];
-
-    let selectedMovieCategory = "ALL";
-    let selectedSeriesGenre = "ALL";
-
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[m]));
-    }
-
-    function setMode(m){
-      mode = m;
-      tabMovies.classList.toggle("active", mode === "movies");
-      tabSeries.classList.toggle("active", mode === "series");
-
-      q.value = "";
-
-      movieCatBar.style.display = (mode === "movies") ? "flex" : "none";
-      seriesGenreBar.style.display = (mode === "series") ? "flex" : "none";
-
-      render();
-    }
-
-    function buildPills(container, allLabel, items, onPick){
-      container.innerHTML = "";
-
-      const allBtn = document.createElement("button");
-      allBtn.className = "pill active";
-      allBtn.textContent = allLabel;
-      allBtn.onclick = () => onPick("ALL", allLabel);
-      container.appendChild(allBtn);
-
-      for (const it of items){
-        const b = document.createElement("button");
-        b.className = "pill";
-        b.textContent = it;
-        b.onclick = () => onPick(it, it);
-        container.appendChild(b);
-      }
-    }
-
-    function setActivePill(container, label){
-      const pills = container.querySelectorAll(".pill");
-      pills.forEach(p => p.classList.remove("active"));
-      for (const p of pills){
-        if (p.textContent === label) p.classList.add("active");
-      }
-    }
-
-    function render(){
-      const term = q.value.trim().toLowerCase();
-      grid.innerHTML = "";
-
-      if (mode === "movies") {
-        const list0 = term ? movies.filter(x => (x.title||"").toLowerCase().includes(term)) : movies;
-        const list = (selectedMovieCategory === "ALL")
-          ? list0
-          : list0.filter(x => (x.category || "أفلام").trim() === selectedMovieCategory);
-
-        for (const it of list){
-          const el = document.createElement("div");
-          el.className = "card";
-          el.onclick = () => location.href = `/watch.html?id=${encodeURIComponent(it.id)}`;
-
-          const img = it.image ? `<img loading="lazy" src="${escapeHtml(it.image)}" alt="${escapeHtml(it.title)}">` : "";
-
-          el.innerHTML = `
-            <div class="poster">
-              ${img}
-              <div class="badge">▶ مشاهدة</div>
-              ${(it.category && it.category.trim() && it.category.trim() !== "أفلام") ? `<div class="genreBadge">${escapeHtml(it.category)}</div>` : ""}
-            </div>
-            <div class="meta">
-              <p class="title">${escapeHtml(it.title)}</p>
-              <div class="hint">اضغط للتشغيل</div>
-            </div>
-          `;
-          grid.appendChild(el);
-        }
-
-        msg.textContent = list.length ? `الأفلام: ${list.length}` : "لا توجد نتائج.";
+    // ====== INIT ======
+    (function init(){
+      const botLink = document.getElementById("botLink");
+      if (TELEGRAM_BOT_USERNAME) {
+        botLink.href = "https://t.me/" + TELEGRAM_BOT_USERNAME;
       } else {
-        const list0 = term ? series.filter(x => (x.title||"").toLowerCase().includes(term)) : series;
-        const list = (selectedSeriesGenre === "ALL")
-          ? list0
-          : list0.filter(x => (x.genre || "").trim() === selectedSeriesGenre);
+        botLink.href = "#";
+        botLink.onclick = (e) => {
+          e.preventDefault();
+          alert("ضع اسم البوت في browse.html داخل TELEGRAM_BOT_USERNAME");
+        };
+      }
 
-        for (const s of list){
-          const el = document.createElement("div");
-          el.className = "card";
-          el.onclick = () => openSeries(s);
+      // Load default tab
+      loadFilms();
+    })();
 
-          const img = s.image ? `<img loading="lazy" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}">` : "";
+    // ====== UI helpers ======
+    function setActiveTab(tab){
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      const btn = document.getElementById(`tab-${tab}`);
+      if (btn) btn.classList.add("active");
+    }
 
-          el.innerHTML = `
-            <div class="poster">
-              ${img}
-              <div class="badge">📺 حلقات</div>
-              ${s.genre ? `<div class="genreBadge">${escapeHtml(s.genre)}</div>` : ""}
-            </div>
-            <div class="meta">
-              <p class="title">${escapeHtml(s.title)}</p>
-              <div class="hint">${s.count} حلقة • اضغط لعرض الحلقات</div>
-            </div>
-          `;
-          grid.appendChild(el);
-        }
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
-        msg.textContent = list.length ? `المسلسلات: ${list.length}` : "لا توجد نتائج.";
+    function normalize(s){
+      return String(s || "").toLowerCase().trim();
+    }
+
+    function getQuery(){
+      return normalize(document.getElementById("q").value);
+    }
+
+    function showLoading(msg){
+      const el = document.getElementById("content");
+      el.className = "";
+      el.innerHTML = `
+        <div class="panel" style="width:100%">
+          <div class="small">${escapeHtml(msg)}</div>
+        </div>
+      `;
+    }
+
+    function showGrid(){
+      const el = document.getElementById("content");
+      el.className = "grid";
+    }
+
+    // ====== TAB CONTROL ======
+    function setTab(tab){
+      currentTab = tab;
+      setActiveTab(tab);
+      document.getElementById("q").value = "";
+
+      if (tab === "films") return loadFilms();
+      if (tab === "series") return loadSeries();
+      if (tab === "foreign") return loadForeignSeries();
+    }
+
+    function refreshCurrent(){
+      if (currentTab === "films") return loadFilms(true);
+      if (currentTab === "series") return loadSeries(true);
+      if (currentTab === "foreign") return loadForeignSeries(true);
+    }
+
+    function applySearch(){
+      const q = getQuery();
+
+      if (currentTab === "films"){
+        const filtered = q ? filmsCache.filter(x => normalize(x.title).includes(q)) : filmsCache;
+        return renderFilms(filtered);
+      }
+      if (currentTab === "series"){
+        const filtered = q ? seriesCache.filter(x => normalize(x.title).includes(q) || normalize(x.genre).includes(q)) : seriesCache;
+        return renderSeriesList(filtered);
+      }
+      if (currentTab === "foreign"){
+        const filtered = q ? foreignCache.filter(x => normalize(x.title).includes(q)) : foreignCache;
+        return renderForeignSeriesList(filtered);
       }
     }
 
-    function openSeries(s){
-      modalTitle.textContent = s.title;
-      epsEl.innerHTML = "";
-
-      for (const ep of (s.episodes || [])) {
-        const b = document.createElement("button");
-        b.className = "epBtn";
-        b.innerHTML = `
-          <span>${escapeHtml(ep.title)}</span>
-          <span style="color:#aab2d3;font-weight:900;">▶</span>
-        `;
-        b.onclick = () => location.href = `/watch.html?id=${encodeURIComponent(ep.id)}`;
-        epsEl.appendChild(b);
+    // ====== LOADERS ======
+    async function loadFilms(force){
+      setActiveTab("films");
+      showLoading("... جاري تحميل الأفلام");
+      try{
+        const res = await fetch(API.films + (force ? `?t=${Date.now()}` : ""));
+        const data = await res.json();
+        filmsCache = Array.isArray(data) ? data : [];
+        renderFilms(filmsCache);
+      } catch(e){
+        showError("تعذّر تحميل الأفلام. تأكد من Function catalog.js");
       }
-
-      backdrop.style.display = "flex";
     }
 
-    closeBtn.onclick = () => backdrop.style.display = "none";
-    backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.style.display = "none"; };
+    async function loadSeries(force){
+      setActiveTab("series");
+      showLoading("... جاري تحميل المسلسلات");
+      try{
+        const res = await fetch(API.series + (force ? `?t=${Date.now()}` : ""));
+        const data = await res.json();
+        seriesCache = Array.isArray(data) ? data : [];
+        renderSeriesList(seriesCache);
+      } catch(e){
+        showError("تعذّر تحميل المسلسلات. تأكد من Function series.js");
+      }
+    }
 
-    tabMovies.onclick = () => setMode("movies");
-    tabSeries.onclick = () => setMode("series");
-    q.addEventListener("input", render);
+    async function loadForeignSeries(force){
+      setActiveTab("foreign");
+      showLoading("... جاري تحميل المسلسلات الأجنبية");
+      try{
+        const res = await fetch(API.foreign + (force ? `?t=${Date.now()}` : ""));
+        const data = await res.json();
+        foreignCache = Array.isArray(data) ? data : [];
+        renderForeignSeriesList(foreignCache);
+      } catch(e){
+        showError("تعذّر تحميل المسلسلات الأجنبية. تأكد من Function foreignSeries.js");
+      }
+    }
 
-    async function load(){
-      const me = await fetch("/.netlify/functions/me").then(r=>r.json());
-      if (!me.loggedIn) { location.href="/"; return; }
+    function showError(msg){
+      const el = document.getElementById("content");
+      el.className = "";
+      el.innerHTML = `
+        <div class="panel" style="width:100%">
+          <div class="small" style="color:#ffb4b4">⚠ ${escapeHtml(msg)}</div>
+          <div class="small">افتح Console لمعرفة التفاصيل.</div>
+        </div>
+      `;
+      console.error(msg);
+    }
 
-      msg.textContent = "جارٍ تحميل القائمة...";
-      const res = await fetch("/.netlify/functions/catalog");
-      const data = await res.json();
+    // ====== RENDER FILMS ======
+    function renderFilms(list){
+      showGrid();
+      const el = document.getElementById("content");
+      el.innerHTML = "";
 
-      if (!res.ok){
-        msg.textContent = data.error || "فشل تحميل القائمة";
+      if (!list.length){
+        el.innerHTML = `<div class="panel" style="width:100%"><div class="small">لا توجد نتائج.</div></div>`;
         return;
       }
 
-      movies = data.movies || [];
-      series = data.series || [];
+      list.forEach(item => {
+        const title = item.title || "بدون عنوان";
+        const url = item.url || "";
+        const image = item.image || "https://via.placeholder.com/600x900?text=Poster";
 
-      movieCategories = data.movieCategories || [];
-      seriesGenres = data.seriesGenres || [];
+        const card = document.createElement("div");
+        card.className = "card";
 
-      // Build movies category pills
-      buildPills(movieCatBar, "الكل", movieCategories, (value, label) => {
-        selectedMovieCategory = value;
-        setActivePill(movieCatBar, label);
-        render();
+        card.innerHTML = `
+          <div class="poster">
+            <img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">
+          </div>
+          <div class="meta">
+            <h3>${escapeHtml(title)}</h3>
+            <div class="badge">🎬 فيلم</div>
+            <button class="btn primary" onclick="openFilm('${encodeURIComponent(title)}','${encodeURIComponent(url)}')">مشاهدة</button>
+          </div>
+        `;
+
+        el.appendChild(card);
       });
-
-      // Build series genre pills
-      buildPills(seriesGenreBar, "الكل", seriesGenres, (value, label) => {
-        selectedSeriesGenre = value;
-        setActivePill(seriesGenreBar, label);
-        render();
-      });
-
-      setMode("movies");
-      msg.textContent = "جاهز.";
     }
 
-    load();
+    function openFilm(titleEnc, urlEnc){
+      const title = decodeURIComponent(titleEnc);
+      const url = decodeURIComponent(urlEnc);
+      const params = new URLSearchParams();
+      params.set("type", "film");
+      params.set("title", title);
+      params.set("src", url);
+      window.location.href = "/watch.html?" + params.toString();
+    }
+
+    // ====== RENDER ARABIC SERIES ======
+    function renderSeriesList(list){
+      showGrid();
+      const el = document.getElementById("content");
+      el.innerHTML = "";
+
+      if (!list.length){
+        el.innerHTML = `<div class="panel" style="width:100%"><div class="small">لا توجد نتائج.</div></div>`;
+        return;
+      }
+
+      // group by genre (optional)
+      // we will just show badges if genre exists
+      list.forEach(series => {
+        const title = series.title || "بدون عنوان";
+        const image = series.image || "https://via.placeholder.com/600x900?text=Poster";
+        const genre = series.genre || "";
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <div class="poster">
+            <img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">
+          </div>
+          <div class="meta">
+            <h3>${escapeHtml(title)}</h3>
+            <div class="badge">📺 مسلسل${genre ? " • " + escapeHtml(genre) : ""}</div>
+            <div class="small">${(series.episodes || []).length} حلقة</div>
+            <button class="btn primary" onclick="openSeries('${encodeURIComponent(title)}')">عرض الحلقات</button>
+          </div>
+        `;
+        el.appendChild(card);
+      });
+    }
+
+    function openSeries(seriesTitleEnc){
+      const seriesTitle = decodeURIComponent(seriesTitleEnc);
+      const series = seriesCache.find(s => s.title === seriesTitle);
+      if (!series) return;
+
+      const el = document.getElementById("content");
+      el.className = "";
+      el.innerHTML = `
+        <div class="panel" style="width:100%">
+          <div class="panelHeader">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn ghost" onclick="renderSeriesList(seriesCache)">⬅ رجوع</button>
+              <h3>${escapeHtml(series.title)}</h3>
+              ${series.genre ? `<span class="badge">${escapeHtml(series.genre)}</span>` : ""}
+            </div>
+            <div class="small">${(series.episodes || []).length} حلقة</div>
+          </div>
+          <div class="episodes" id="episodes"></div>
+        </div>
+      `;
+
+      const eps = document.getElementById("episodes");
+      (series.episodes || []).forEach((ep, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "epBtn";
+        btn.innerHTML = `<span>${escapeHtml(ep.title || `Episode ${idx+1}`)}</span><span class="small">▶</span>`;
+        btn.onclick = () => {
+          const params = new URLSearchParams();
+          params.set("type","series-ep");
+          params.set("series", series.title);
+          params.set("ep", ep.title || `Episode ${idx+1}`);
+          params.set("src", ep.hlsUrl);
+          window.location.href = "/watch.html?" + params.toString();
+        };
+        eps.appendChild(btn);
+      });
+    }
+
+    // ====== RENDER FOREIGN SERIES (HLS + VTT) ======
+    function renderForeignSeriesList(list){
+      showGrid();
+      const el = document.getElementById("content");
+      el.innerHTML = "";
+
+      if (!list.length){
+        el.innerHTML = `<div class="panel" style="width:100%"><div class="small">لا توجد نتائج.</div></div>`;
+        return;
+      }
+
+      list.forEach(series => {
+        const title = series.title || "بدون عنوان";
+        const image = series.image || "https://via.placeholder.com/600x900?text=Poster";
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <div class="poster">
+            <img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">
+          </div>
+          <div class="meta">
+            <h3>${escapeHtml(title)}</h3>
+            <div class="badge">🌍 مسلسل أجنبي</div>
+            <div class="small">${(series.episodes || []).length} حلقة</div>
+            <button class="btn primary" onclick="openForeignSeries('${encodeURIComponent(title)}')">عرض الحلقات</button>
+          </div>
+        `;
+        el.appendChild(card);
+      });
+    }
+
+    function openForeignSeries(seriesTitleEnc){
+      const seriesTitle = decodeURIComponent(seriesTitleEnc);
+      const series = foreignCache.find(s => s.title === seriesTitle);
+      if (!series) return;
+
+      const el = document.getElementById("content");
+      el.className = "";
+      el.innerHTML = `
+        <div class="panel" style="width:100%">
+          <div class="panelHeader">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn ghost" onclick="renderForeignSeriesList(foreignCache)">⬅ رجوع</button>
+              <h3>${escapeHtml(series.title)}</h3>
+              <span class="badge">🌍</span>
+            </div>
+            <div class="small">${(series.episodes || []).length} حلقة</div>
+          </div>
+          <div class="episodes" id="episodes"></div>
+        </div>
+      `;
+
+      const eps = document.getElementById("episodes");
+      (series.episodes || []).forEach((ep, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "epBtn";
+
+        const subsCount = (ep.subs || []).length;
+        const subsTxt = subsCount ? ` • ترجمات: ${subsCount}` : "";
+
+        btn.innerHTML = `<span>${escapeHtml(ep.title || `Episode ${idx+1}`)}<span class="small">${escapeHtml(subsTxt)}</span></span><span class="small">▶</span>`;
+
+        btn.onclick = () => {
+          // send the whole episode object encoded safely
+          const payload = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(ep)))));
+          const params = new URLSearchParams();
+          params.set("type", "foreign-ep");
+          params.set("series", series.title);
+          params.set("ep", ep.title || `Episode ${idx+1}`);
+          params.set("payload", payload);
+          window.location.href = "/watch.html?" + params.toString();
+        };
+
+        eps.appendChild(btn);
+      });
+    }
   </script>
 </body>
 </html>
