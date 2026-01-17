@@ -7,17 +7,8 @@
 
   <style>
     :root{
-      --bg:#0b0f16;
-      --card:#0f1623;
-      --card2:#0c1320;
-      --txt:#e9eefb;
-      --muted:#9fb0cc;
-      --stroke:rgba(255,255,255,.08);
+      --bg:#0b0f16; --txt:#e9eefb; --muted:#9fb0cc; --stroke:rgba(255,255,255,.08);
       --glow:rgba(96,165,250,.25);
-      --btn:#111a2a;
-      --btn2:#0d1626;
-      --accent:#60a5fa;
-      --danger:#ff6b6b;
     }
     *{box-sizing:border-box}
     body{
@@ -44,19 +35,10 @@
     .poster{
       width:48px;height:48px;border-radius:12px;object-fit:cover;
       background:rgba(255,255,255,.06);border:1px solid var(--stroke);
-      box-shadow:0 0 0 1px rgba(255,255,255,.02), 0 12px 25px rgba(0,0,0,.28);
       flex:0 0 auto;
     }
-    h1{
-      font-size:15px;margin:0;line-height:1.35;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      max-width: 70vw;
-    }
-    .subline{
-      margin:4px 0 0;font-size:12px;color:var(--muted);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      max-width: 70vw;
-    }
+    h1{font-size:15px;margin:0;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw}
+    .subline{margin:4px 0 0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw}
     .btn{
       appearance:none;border:1px solid var(--stroke);
       background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
@@ -64,10 +46,7 @@
       padding:10px 12px;border-radius:12px;
       cursor:pointer;
       transition:.15s transform, .15s border-color, .15s box-shadow;
-      display:inline-flex;align-items:center;gap:8px;
-      text-decoration:none;
-      user-select:none;
-      white-space:nowrap;
+      display:inline-flex;align-items:center;gap:8px;text-decoration:none;user-select:none;white-space:nowrap;
     }
     .btn:hover{transform:translateY(-1px);border-color:rgba(96,165,250,.35);box-shadow:0 0 0 4px var(--glow)}
     .playerCard{
@@ -79,54 +58,26 @@
       box-shadow:0 18px 45px rgba(0,0,0,.35);
     }
     .playerInner{background:rgba(0,0,0,.35)}
-    video{
-      width:100%;
-      height:auto;
-      display:block;
-      background:#000;
-    }
-    .iframeWrap{
-      position:relative;
-      width:100%;
-      aspect-ratio: 16/9;
-      background:#000;
-    }
-    .iframeWrap iframe{
-      position:absolute;inset:0;
-      width:100%;height:100%;
-      border:0;
-    }
+    video{width:100%;height:auto;display:block;background:#000}
+    .iframeWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+    .iframeWrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
     .meta{
       padding:14px 14px 16px;
-      background:linear-gradient(180deg, rgba(15,22,35,.85), rgba(11,15,22,.85));
       border-top:1px solid var(--stroke);
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+      background:linear-gradient(180deg, rgba(15,22,35,.85), rgba(11,15,22,.85));
     }
-    .meta .hint{font-size:12px;color:var(--muted)}
-    .pill{
-      font-size:12px;color:var(--muted);
-      padding:8px 10px;border-radius:999px;
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.03);
-    }
+    .pill{font-size:12px;color:var(--muted);padding:8px 10px;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.03)}
     .error{
-      margin-top:14px;
-      padding:12px 14px;
-      border-radius:14px;
+      margin-top:14px;padding:12px 14px;border-radius:14px;
       border:1px solid rgba(255,107,107,.35);
       background:rgba(255,107,107,.10);
       color:#ffd7d7;
-      display:none;
-      line-height:1.5;
+      display:none;line-height:1.5;
+      white-space:pre-wrap;
     }
-    .small{font-size:12px}
   </style>
 
-  <!-- hls.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js"></script>
 </head>
 
@@ -140,20 +91,19 @@
           <div id="pageSub" class="subline"></div>
         </div>
       </div>
-
       <a class="btn" href="browse.html">⬅️ رجوع للمكتبة</a>
     </div>
 
     <div class="playerCard">
       <div class="playerInner" id="playerMount">
         <video id="video" controls playsinline crossorigin="anonymous" style="display:none;"></video>
+
         <div class="iframeWrap" id="iframeWrap" style="display:none;">
           <iframe id="bunnyFrame" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
 
       <div class="meta">
-        <div class="hint" id="hintText">إذا لم يبدأ التشغيل، جرّب إعادة التحميل أو تغيير السيرفر.</div>
         <div class="pill" id="typePill">—</div>
       </div>
     </div>
@@ -162,16 +112,22 @@
   </div>
 
 <script>
-(function(){
+(() => {
   const qs = new URLSearchParams(location.search);
 
-  const type = (qs.get("type") || "").toLowerCase();       // hls | bunny
-  const src  = qs.get("src") || "";                        // m3u8 or bunny embed url
-  const title = qs.get("title") || "مشاهدة";
-  const poster = qs.get("poster") || qs.get("img") || "";  // support both names
-  const subkey = qs.get("subkey") || "";                   // IMPORTANT: foreign series uses this
-  const subsParam = qs.get("subs") || "";                  // optional JSON
-  const subParam = qs.get("sub") || "";                    // optional simple
+  // type: "bunny" or "hls"
+  const type   = (qs.get("type") || "").toLowerCase();
+  const src    = qs.get("src") || "";
+  const title  = qs.get("title") || "مشاهدة";
+  const poster = qs.get("poster") || qs.get("img") || "";
+
+  // subtitles can come as:
+  // 1) subs= (JSON encoded array [{lang,label,url}, ...])
+  // 2) sub=  (single vtt url)
+  // 3) subkey= (if you use it to fetch episode object)
+  const subsParam = qs.get("subs") || "";
+  const subParam  = qs.get("sub")  || "";
+  const subkey    = qs.get("subkey") || "";
 
   const video = document.getElementById("video");
   const iframeWrap = document.getElementById("iframeWrap");
@@ -183,104 +139,43 @@
   const errorBox = document.getElementById("errorBox");
 
   pageTitle.textContent = title;
-  pageSub.textContent = src ? decodeURIComponentSafe(src).slice(0, 90) : "";
-  if (poster) posterImg.src = poster;
-  else posterImg.style.display = "none";
+  pageSub.textContent = src ? safeDecode(src).slice(0, 140) : "";
+  if (poster) posterImg.src = poster; else posterImg.style.display = "none";
 
-  typePill.textContent =
-    type === "bunny" ? "Bunny Player" :
-    type === "hls" ? "HLS (m3u8)" :
-    "مشغل";
+  typePill.textContent = (type === "bunny") ? "Bunny Player" : "HLS (m3u8)";
 
-  function showError(msg){
-    errorBox.style.display = "block";
-    errorBox.textContent = msg;
+  function safeDecode(s){ try { return decodeURIComponent(s); } catch { return s; } }
+  function showError(msg){ errorBox.style.display = "block"; errorBox.textContent = msg; }
+
+  // ---------- SUBTITLES ----------
+  function clearTracks(){
+    video.querySelectorAll("track").forEach(t => t.remove());
   }
 
-  function decodeURIComponentSafe(s){
-    try { return decodeURIComponent(s); } catch { return s; }
+  // IMPORTANT:
+  // srclang MUST be a real language code like "ar", not "s1"
+  function normalizeLang(lang){
+    const l = (lang || "").toLowerCase().trim();
+    if (l === "ar" || l === "ara") return "ar";
+    if (l === "en" || l === "eng") return "en";
+    // your JSON uses s1/s2... -> treat as Arabic by default
+    if (/^s\d+$/.test(l)) return "ar";
+    return l || "ar";
   }
 
-  // ---- Subtitles ----
-  function normalizeSubs(raw){
-    // raw can be: array, object with subs, string json, or our simple "url|label|lang|default"
-    if (!raw) return [];
-
-    // If it came as string JSON (in ?subs=)
-    if (typeof raw === "string") {
-      const str = raw.trim();
-      // Case: our simple format in ?sub=
-      if (str.includes("|") && (str.startsWith("http") || str.includes("http"))) {
-        // one track only
-        const [url, label, lang, def] = str.split("|");
-        return [{
-          url: (url || "").trim(),
-          label: (label || "ترجمة").trim(),
-          lang: (lang || "ar").trim(),
-          isDefault: def === "1"
-        }].filter(x => x.url);
-      }
-
-      // Case: JSON
-      try {
-        const parsed = JSON.parse(str);
-        return normalizeSubs(parsed);
-      } catch {
-        return [];
-      }
-    }
-
-    // If backend returns {subs:[...]}
-    if (raw && typeof raw === "object" && !Array.isArray(raw) && Array.isArray(raw.subs)) {
-      return normalizeSubs(raw.subs);
-    }
-
-    if (!Array.isArray(raw)) return [];
-
-    // Your JSON uses lang: "s1", "s2" ...
-    // We'll map these to valid srclang values.
-    return raw.map((s, i) => {
-      const url = (s.url || "").trim();
-      const label = (s.label || `ترجمة ${i+1}`).trim();
-
-      const rawLang = (s.lang || "").trim().toLowerCase();
-      let srclang = "ar";
-
-      // If it already looks like a real code:
-      if (/^[a-z]{2}(-[a-z]{2})?$/.test(rawLang)) srclang = rawLang;
-      else if (/^s\d+$/.test(rawLang)) {
-        // keep Arabic for now; browser requires valid-ish code
-        srclang = "ar";
-      }
-
-      return {
-        url,
-        label: label === `SUB ${i+1}` ? `ترجمة ${i+1}` : label,
-        lang: srclang,
-        isDefault: i === 0
-      };
-    }).filter(x => x.url);
+  function addTrack({url, label, lang, isDefault}){
+    if (!url) return;
+    const t = document.createElement("track");
+    t.kind = "subtitles";
+    t.label = label || "ترجمة";
+    t.srclang = normalizeLang(lang);
+    t.src = url;
+    t.default = !!isDefault;
+    video.appendChild(t);
   }
 
-  function attachVttTracks(subs){
-    // remove old tracks
-    const old = video.querySelectorAll("track");
-    old.forEach(t => t.remove());
-
-    const list = normalizeSubs(subs);
-    if (!list.length) return;
-
-    list.forEach((s) => {
-      const t = document.createElement("track");
-      t.kind = "subtitles";
-      t.label = s.label || "ترجمة";
-      t.srclang = s.lang || "ar";
-      t.src = s.url;
-      t.default = !!s.isDefault;
-      video.appendChild(t);
-    });
-
-    // Some browsers need forcing one track to showing
+  function forceShowFirstTrack(){
+    // after tracks are added, make sure browser enables them
     setTimeout(() => {
       try {
         if (video.textTracks && video.textTracks.length) {
@@ -291,120 +186,111 @@
     }, 250);
   }
 
-  async function fetchSubsByKey(key){
-    // Your site uses subkey=... but the function name might differ in your project.
-    // We’ll try common endpoints that people use in this setup.
-    const candidates = [
-      `/.netlify/functions/subs?key=${encodeURIComponent(key)}`,
-      `/.netlify/functions/getSubs?key=${encodeURIComponent(key)}`,
-      `/.netlify/functions/subtitles?key=${encodeURIComponent(key)}`,
-      `/.netlify/functions/subs?subkey=${encodeURIComponent(key)}`,
-      `/.netlify/functions/getSubs?subkey=${encodeURIComponent(key)}`,
-      `/.netlify/functions/subtitles?subkey=${encodeURIComponent(key)}`
-    ];
-
-    for (const url of candidates) {
+  function parseSubsFromUrl(){
+    // subs= JSON array in URL
+    if (subsParam) {
       try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) continue;
-        const data = await res.json();
-        const subs = normalizeSubs(data);
-        if (subs.length) return subs;
+        const decoded = safeDecode(subsParam);
+        const arr = JSON.parse(decoded);
+        if (Array.isArray(arr)) return arr;
       } catch {}
     }
+
+    // sub= single VTT
+    if (subParam) {
+      const u = safeDecode(subParam).trim();
+      if (u.startsWith("http")) return [{ lang: "ar", label: "العربية", url: u }];
+    }
+
     return [];
   }
 
-  async function initSubtitles(){
-    // Priority:
-    // 1) subkey (foreign series flow)
-    // 2) subs json in URL
-    // 3) sub simple in URL
-    if (subkey) {
-      const subs = await fetchSubsByKey(subkey);
-      if (subs.length) attachVttTracks(subs);
-      return;
+  async function loadSubsByKey(key){
+    // If you still use subkey, this call must return either:
+    // - { subs: [...] } OR
+    // - just [...] directly
+    const r = await fetch(`/.netlify/functions/foreignSeries?subkey=${encodeURIComponent(key)}`, { cache: "no-store" });
+    if (!r.ok) throw new Error("subs fetch failed");
+    return await r.json();
+  }
+
+  async function initSubs(){
+    clearTracks();
+
+    // 1) from URL (best, no extra request)
+    let list = parseSubsFromUrl();
+
+    // 2) from subkey (foreign series lookup)
+    if ((!list || !list.length) && subkey) {
+      try {
+        const data = await loadSubsByKey(subkey);
+        if (Array.isArray(data)) list = data;
+        else if (data && Array.isArray(data.subs)) list = data.subs;
+        else if (data && data.episode && Array.isArray(data.episode.subs)) list = data.episode.subs;
+        else list = [];
+      } catch {
+        list = [];
+      }
     }
 
-    if (subsParam) {
-      attachVttTracks(decodeURIComponentSafe(subsParam));
-      return;
-    }
+    if (Array.isArray(list) && list.length) {
+      list.forEach((s, i) => addTrack({
+        url: s.url || s.src,
+        label: s.label || (i === 0 ? "العربية" : `ترجمة ${i+1}`),
+        lang: s.lang || "ar",
+        isDefault: i === 0
+      }));
 
-    if (subParam) {
-      attachVttTracks(decodeURIComponentSafe(subParam));
-      return;
+      // THIS is what triggers the browser to re-evaluate tracks
+      try { video.load(); } catch {}
+
+      forceShowFirstTrack();
     }
   }
 
-  // ---- Players ----
+  // ---------- PLAYERS ----------
   function playHls(m3u8){
-    if (!m3u8) {
-      showError("رابط الفيديو غير موجود.");
-      return;
-    }
+    if (!m3u8) { showError("رابط الفيديو غير موجود."); return; }
 
     video.style.display = "block";
     iframeWrap.style.display = "none";
 
-    // Native HLS (Safari / iOS)
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = m3u8;
       video.load();
       return;
     }
 
-    // hls.js
     if (window.Hls && window.Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: false
-      });
-
+      const hls = new Hls({ enableWorker: true });
       hls.attachMedia(video);
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        hls.loadSource(m3u8);
-      });
-
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        // Keep message simple (no debug)
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(m3u8));
+      hls.on(Hls.Events.ERROR, (ev, data) => {
         if (data && data.fatal) {
-          showError("تعذر تشغيل الفيديو. غالباً السبب إعدادات CORS أو أن الرابط لا يسمح بالتشغيل داخل المتصفح.");
+          showError("تعذر تشغيل الفيديو داخل المتصفح. غالباً المشكلة من CORS أو حماية السيرفر.");
           try { hls.destroy(); } catch {}
         }
       });
-
       return;
     }
 
-    showError("متصفحك لا يدعم تشغيل m3u8 هنا. جرّب متصفح آخر.");
+    showError("متصفحك لا يدعم تشغيل m3u8 هنا.");
   }
 
   function playBunny(embedUrl){
-    if (!embedUrl) {
-      showError("رابط Bunny غير موجود.");
-      return;
-    }
-
+    if (!embedUrl) { showError("رابط Bunny غير موجود."); return; }
     video.style.display = "none";
     iframeWrap.style.display = "block";
-
     bunnyFrame.src = embedUrl;
   }
 
-  // ---- Init ----
-  (async function init(){
-    // subtitles first (so they attach early)
-    await initSubtitles();
+  (async () => {
+    // init subs first so tracks exist before play (better UX)
+    await initSubs();
 
-    if (type === "bunny") {
-      playBunny(src);
-    } else {
-      // default to hls
-      playHls(src);
-    }
+    if (type === "bunny") playBunny(src);
+    else playHls(src);
   })();
-
 })();
 </script>
 </body>
