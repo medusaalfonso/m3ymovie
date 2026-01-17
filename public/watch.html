@@ -7,304 +7,417 @@
 
   <style>
     :root{
-      --bg:#0b0f18;
-      --panel:#11182a;
-      --txt:#e9eefc;
-      --muted:#a6b2d6;
-      --stroke:rgba(255,255,255,.10);
-      --r:18px;
-      --shadow:0 20px 60px rgba(0,0,0,.45);
+      --bg:#070a12;
+      --card:#0c1324;
+      --card2:#0a1020;
+      --text:#e8ecff;
+      --muted:#a9b3d6;
+      --line:rgba(255,255,255,.10);
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+      --radius:18px;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:radial-gradient(900px 420px at 80% -10%, rgba(124,92,255,.35), transparent 55%),
-                 radial-gradient(800px 380px at 20% 0%, rgba(110,168,255,.28), transparent 55%),
-                 var(--bg);
-      color:var(--txt);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(900px 360px at 70% -10%, rgba(124,58,237,.25), transparent 60%),
+        radial-gradient(700px 320px at 20% 0%, rgba(34,211,238,.14), transparent 55%),
+        linear-gradient(180deg, #050710, #070a12 55%, #050710);
+      color:var(--text);
       min-height:100vh;
     }
-    a{color:inherit;text-decoration:none}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
-    .top{
-      display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-      padding:14px 14px;border:1px solid var(--stroke);border-radius:var(--r);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      box-shadow:var(--shadow);
+
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 40px}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
     }
-    .title{font-weight:900}
-    .muted{color:var(--muted);font-size:12px;font-weight:700}
+    .titlebox{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .title{
+      font-weight:800;font-size:16px;letter-spacing:.2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .subline{
+      display:none; /* URL line removed */
+      color:var(--muted);font-size:12px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
     .btn{
-      cursor:pointer;border:1px solid var(--stroke);border-radius:14px;
-      padding:10px 12px;background:rgba(255,255,255,.06);color:var(--txt);
-      font-weight:800;
+      appearance:none;border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 14px;border-radius:12px;
+      cursor:pointer; font-weight:700;
+      transition:.15s transform,.15s background,.15s border;
+      text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+      flex:0 0 auto;
     }
-    .playerBox{
-      margin-top:14px;
-      border:1px solid var(--stroke);
-      border-radius:22px;
+    .btn:hover{transform: translateY(-1px);background: rgba(255,255,255,.10);border-color: rgba(255,255,255,.22)}
+    .btn:active{transform: translateY(0px)}
+
+    .playerCard{
+      margin-top:16px;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
       overflow:hidden;
-      background:rgba(0,0,0,.25);
-      box-shadow:var(--shadow);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+      position:relative;
     }
+
+    .posterBG{
+      position:absolute;inset:0;
+      background-size:cover;background-position:center;
+      filter: blur(24px) saturate(1.1);
+      opacity:.16; transform: scale(1.08);
+      pointer-events:none;
+    }
+
+    .playerInner{
+      position:relative;
+      padding:14px;
+    }
+
+    /* Video */
     video{
       width:100%;
-      height:auto;
+      max-height:70vh;
       background:#000;
-      display:block;
+      border-radius: 14px;
+      outline:none;
     }
-    .iframeWrap{
-      position:relative;
+    iframe{
       width:100%;
-      aspect-ratio:16/9;
+      height:min(70vh, 620px);
+      border:0;
+      border-radius: 14px;
       background:#000;
     }
-    .iframeWrap iframe{
-      position:absolute;inset:0;width:100%;height:100%;
-      border:0;
+
+    /* Subtitle styling */
+    video::cue{
+      font-size: 14px;
+      line-height: 1.4;
+      color: #ffffff;
+      background: rgba(0,0,0,0.55);
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-shadow: 0 2px 6px rgba(0,0,0,.6);
     }
-    .bar{
-      display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-      padding:12px 14px;border-top:1px solid var(--stroke);
-      background:rgba(17,24,42,.75);
+    @media (max-width:600px){
+      video::cue{font-size:12px}
     }
-    .pill{
-      border:1px solid var(--stroke);border-radius:999px;
-      padding:6px 10px;background:rgba(255,255,255,.04);
-      color:var(--muted);font-size:12px;font-weight:800;
+
+    /* Autoplay overlay (only when needed) */
+    .overlay{
+      position:absolute;
+      inset:14px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      border-radius: 14px;
+      background: radial-gradient(600px 240px at 50% 10%, rgba(124,58,237,.35), rgba(0,0,0,.55));
+      backdrop-filter: blur(6px);
+    }
+    .overlay .playBtn{
+      padding:12px 18px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.22);
+      color: var(--text);
+      font-weight: 900;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      transition:.15s transform,.15s background;
+    }
+    .overlay .playBtn:hover{transform: translateY(-1px);background: rgba(255,255,255,.14)}
+    .overlay small{
+      display:block;
+      margin-top:10px;
+      color: rgba(232,236,255,.85);
+      text-align:center;
+      max-width: 560px;
+      padding: 0 10px;
+    }
+
+    .hint{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      display:none; /* keep clean; no debug text */
     }
   </style>
 
   <!-- hls.js -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 </head>
-
 <body>
   <div class="wrap">
-    <div class="top">
-      <div>
-        <div id="t" class="title">...</div>
-        <div id="s" class="muted"></div>
+    <div class="topbar">
+      <div class="titlebox">
+        <div id="t" class="title">المشاهدة</div>
+        <div id="s" class="subline"></div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <a class="btn" href="/browse.html">رجوع للمكتبة</a>
-      </div>
+      <a class="btn" href="browse.html">رجوع للمكتبة</a>
     </div>
 
-    <div class="playerBox" id="box">
-      <!-- will be filled -->
-    </div>
+    <div class="playerCard" id="card">
+      <div class="posterBG" id="bg"></div>
+      <div class="playerInner" id="playerRoot">
 
-    <div class="bar">
-      <span id="mode" class="pill">...</span>
-      <span id="subsInfo" class="pill">ترجمة: ...</span>
+        <!-- HLS/MP4 player -->
+        <video id="video" controls playsinline></video>
+
+        <!-- Bunny iframe -->
+        <iframe id="bunny" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="display:none;"></iframe>
+
+        <!-- Autoplay overlay (shown only if browser blocks autoplay) -->
+        <div class="overlay" id="overlay">
+          <div style="text-align:center;">
+            <button class="playBtn" id="playBtn">▶ تشغيل</button>
+            <small>قد يمنع المتصفح التشغيل التلقائي أحيانًا. اضغط تشغيل للمتابعة.</small>
+          </div>
+        </div>
+
+        <div class="hint" id="hint"></div>
+      </div>
     </div>
   </div>
 
-<script>
-  const params = new URLSearchParams(location.search);
-  const type = params.get("type") || "";
-  const src  = params.get("src")  || "";
-  const title = params.get("title") || "مشاهدة";
-  const poster = params.get("poster") || "";
-
-  const elT = document.getElementById("t");
-  const elS = document.getElementById("s");
-  const elBox = document.getElementById("box");
-  const elMode = document.getElementById("mode");
-  const elSubsInfo = document.getElementById("subsInfo");
-
-  elT.textContent = title;
-  elS.textContent = src ? decodeURIComponent(src) : "";
-
-  function b64UrlDecodeToText(b64url){
-    const b64 = (b64url || "").replace(/-/g,'+').replace(/_/g,'/');
-    const pad = b64.length % 4 ? "=".repeat(4 - (b64.length % 4)) : "";
-    const bin = atob(b64 + pad);
-    const bytes = new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
-  function parseSubs(){
-    // subs can be passed as base64url(JSON array)
-    const subsB64 = params.get("subs");
-    if(subsB64){
-      try{
-        const txt = b64UrlDecodeToText(subsB64);
-        const arr = JSON.parse(txt);
-        if(Array.isArray(arr)) return arr;
-      }catch(_){}
+  <script>
+    function qs(name){
+      return new URLSearchParams(location.search).get(name) || "";
     }
 
-    // or single sub url
-    const sub = params.get("sub");
-    if(sub) return [{lang:"ar", label:"Arabic", url: sub}];
+    const type   = (qs("type") || "").toLowerCase();      // hls | mp4 | bunny
+    const src    = qs("src");                              // m3u8/mp4 or bunny embed URL
+    const title  = qs("title") || "المشاهدة";
+    const poster = qs("poster");
 
-    return [];
-  }
+    // Subtitles:
+    // - if you pass sub=URL : single subtitle
+    // - if you pass subkey=KEY : we fetch subs from catalog endpoint (foreign series uses subs array)
+    const sub    = qs("sub");     // direct vtt url
+    const subkey = qs("subkey");  // key to look up subs from API response (if your watch links use it)
 
-  function clearTracks(video){
-    // remove existing <track>
-    const tracks = Array.from(video.querySelectorAll("track"));
-    tracks.forEach(t => t.remove());
+    const elT = document.getElementById("t");
+    const elS = document.getElementById("s");
+    const elBg = document.getElementById("bg");
+    const video = document.getElementById("video");
+    const iframe = document.getElementById("bunny");
+    const overlay = document.getElementById("overlay");
+    const playBtn = document.getElementById("playBtn");
 
-    // also disable any text tracks already loaded
-    const tts = video.textTracks;
-    for(let i=0;i<tts.length;i++){
-      try{ tts[i].mode = "disabled"; }catch(_){}
+    elT.textContent = title;
+    elS.textContent = ""; // URL removed
+    if (poster) {
+      elBg.style.backgroundImage = `url("${poster}")`;
+      video.poster = poster;
     }
-  }
 
-  function addTracks(video, subs){
-    clearTracks(video);
-
-    if(!subs || !subs.length){
-      elSubsInfo.textContent = "ترجمة: لا توجد";
-      return;
+    function clearTracks(){
+      // Remove existing <track> elements
+      const tracks = Array.from(video.querySelectorAll("track"));
+      tracks.forEach(t => t.remove());
     }
 
-    subs.forEach((s, idx) => {
-      if(!s || !s.url) return;
-
+    function addTrack(url, label, lang, isDefault){
+      if (!url) return;
       const tr = document.createElement("track");
       tr.kind = "subtitles";
-      tr.src = s.url;
-      tr.srclang = s.lang || ("s" + (idx+1));   // your json uses s1/s2...
-      tr.label = s.label || ("SUB " + (idx+1));
-      tr.default = (idx === 0);
+      tr.src = url;
+      tr.label = label || "Arabic";
+      tr.srclang = (lang || "ar").toLowerCase();
+      tr.default = !!isDefault;
       video.appendChild(tr);
-    });
-
-    // IMPORTANT: force reload so the browser requests VTT
-    video.load();
-
-    elSubsInfo.textContent = "ترجمة: متاحة";
-  }
-
-  async function resolveRedirect(url){
-    // for shofha links that redirect to final playable URL
-    const r = await fetch("/.netlify/functions/resolve?u=" + encodeURIComponent(url) + "&t=" + Date.now(), {cache:"no-store"});
-    if(!r.ok) throw new Error("resolve failed");
-    const j = await r.json();
-    // expected: { url: "final.m3u8" } or { url: "final.mp4" }
-    return j.url || j.finalUrl || j.location || "";
-  }
-
-  function mountHlsPlayer(hlsUrl, subs){
-    elMode.textContent = "مشغل: HLS";
-
-    const v = document.createElement("video");
-    v.controls = true;
-    v.playsInline = true;
-
-    // allow external subtitle fetching
-    v.crossOrigin = "anonymous";
-
-    if(poster) v.poster = poster;
-
-    elBox.innerHTML = "";
-    elBox.appendChild(v);
-
-    // tracks
-    addTracks(v, subs);
-
-    // hls
-    if(window.Hls && Hls.isSupported()){
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: false
-      });
-      hls.loadSource(hlsUrl);
-      hls.attachMedia(v);
-    }else{
-      // Safari (native HLS)
-      v.src = hlsUrl;
-    }
-  }
-
-  function mountMp4Player(mp4Url, subs){
-    elMode.textContent = "مشغل: MP4";
-
-    const v = document.createElement("video");
-    v.controls = true;
-    v.playsInline = true;
-    v.crossOrigin = "anonymous";
-    if(poster) v.poster = poster;
-
-    elBox.innerHTML = "";
-    elBox.appendChild(v);
-
-    addTracks(v, subs);
-
-    v.src = mp4Url;
-  }
-
-  function mountBunny(embedUrl){
-    elMode.textContent = "مشغل: Bunny (iframe)";
-    elSubsInfo.textContent = "ترجمة: عبر المشغل";
-
-    elBox.innerHTML = `
-      <div class="iframeWrap">
-        <iframe
-          src="${embedUrl}"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>
-      </div>
-    `;
-  }
-
-  (async function init(){
-    if(!src){
-      elBox.innerHTML = "<div style='padding:16px;color:#a6b2d6'>لا يوجد رابط تشغيل.</div>";
-      elMode.textContent = "مشغل: -";
-      elSubsInfo.textContent = "ترجمة: -";
-      return;
     }
 
-    const subs = parseSubs();
+    async function loadSubsFromCatalogIfNeeded(){
+      // If direct `sub` provided, use it
+      if (sub) {
+        addTrack(sub, "Arabic", "ar", true);
+        return;
+      }
 
-    if(type === "bunny"){
-      mountBunny(src);
-      return;
-    }
+      // If no subkey, nothing to load
+      if (!subkey) return;
 
-    if(type === "hls"){
-      mountHlsPlayer(src, subs);
-      return;
-    }
+      // We try to fetch from your Netlify functions:
+      // - catalog (movies/series)
+      // - foreignSeries (foreign series)
+      // and search for a matching subsKey (your backend uses keys like subs_....)
+      const endpoints = [
+        "/.netlify/functions/catalog",
+        "/.netlify/functions/foreignSeries"
+      ];
 
-    if(type === "mp4"){
-      mountMp4Player(src, subs);
-      return;
-    }
+      for (const ep of endpoints) {
+        try {
+          const r = await fetch(ep + "?t=" + Date.now(), { cache: "no-store" });
+          if (!r.ok) continue;
+          const data = await r.json();
 
-    if(type === "redirect"){
-      // best effort: resolve to final url (m3u8/mp4) using your function
-      try{
-        const finalUrl = await resolveRedirect(src);
-        if(finalUrl.endsWith(".m3u8")) return mountHlsPlayer(finalUrl, subs);
-        return mountMp4Player(finalUrl, subs);
-      }catch(_){
-        // fallback: try as-is
-        if(src.endsWith(".m3u8")) return mountHlsPlayer(src, subs);
-        return mountMp4Player(src, subs);
+          // data might be array of movies+series+foreign series in different shapes.
+          // We scan for any episode that has subsKey === subkey, then read its subs array.
+          const subsFound = findSubsByKey(data, subkey);
+          if (subsFound && subsFound.length) {
+            // If subs objects have {lang:"s1", label:"SUB 1", url:"..."}
+            // We map them into <track> entries.
+            subsFound.forEach((x, idx) => {
+              const label = x.label || (x.lang ? x.lang.toUpperCase() : ("SUB " + (idx+1)));
+              const lang  = x.lang || "ar";
+              addTrack(x.url, label, lang, idx === 0);
+            });
+            return;
+          }
+        } catch (e) {
+          // silent (no debug)
+        }
       }
     }
 
-    // fallback
-    if(src.includes("player.mediadelivery.net/embed/")){
-      mountBunny(src);
-      return;
+    function findSubsByKey(data, key){
+      // Flexible deep scan for objects with subsKey===key and an array "subs"
+      const stack = [data];
+      while (stack.length) {
+        const cur = stack.pop();
+        if (!cur) continue;
+
+        if (Array.isArray(cur)) {
+          for (let i = 0; i < cur.length; i++) stack.push(cur[i]);
+          continue;
+        }
+
+        if (typeof cur === "object") {
+          // Match pattern:
+          // { subsKey: "...", subs: [ {lang,label,url}, ... ] }
+          if (cur.subsKey === key && Array.isArray(cur.subs)) {
+            return cur.subs;
+          }
+
+          // sometimes backend might put it directly on episode:
+          // { subs: [...], key:"..." } etc
+          if (cur.key === key && Array.isArray(cur.subs)) {
+            return cur.subs;
+          }
+
+          // push nested values
+          for (const v of Object.values(cur)) stack.push(v);
+        }
+      }
+      return null;
     }
-    if(src.endsWith(".m3u8")){
-      mountHlsPlayer(src, subs);
-      return;
+
+    async function tryAutoplay(){
+      // Attempt autoplay unmuted
+      try {
+        await video.play();
+        overlay.style.display = "none";
+        return true;
+      } catch (_) {}
+
+      // If blocked, try muted autoplay
+      try {
+        video.muted = true;
+        await video.play();
+        overlay.style.display = "none";
+        return true;
+      } catch (_) {}
+
+      // Still blocked -> show overlay and let user click
+      overlay.style.display = "flex";
+      return false;
     }
-    mountMp4Player(src, subs);
-  })();
-</script>
+
+    playBtn.addEventListener("click", async () => {
+      overlay.style.display = "none";
+      try {
+        // if muted autoplay was required, keep muted until user gesture then unmute
+        await video.play();
+        video.muted = false;
+      } catch (_) {
+        // if still fails, keep overlay
+        overlay.style.display = "flex";
+      }
+    });
+
+    async function init(){
+      // Bunny embed
+      if (type === "bunny") {
+        video.style.display = "none";
+        overlay.style.display = "none";
+        iframe.style.display = "block";
+        iframe.src = src;
+        return;
+      }
+
+      // HLS / MP4
+      iframe.style.display = "none";
+      video.style.display = "block";
+      clearTracks();
+
+      // Load subtitles first (tracks should exist before play)
+      await loadSubsFromCatalogIfNeeded();
+
+      // Play source
+      if (type === "mp4") {
+        video.src = src;
+        video.load();
+        await tryAutoplay();
+        return;
+      }
+
+      // Default: HLS
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Safari iOS/mac
+        video.src = src;
+        video.load();
+        await tryAutoplay();
+      } else if (window.Hls) {
+        const hls = new Hls({
+          maxBufferLength: 30,
+          enableWorker: true,
+          lowLatencyMode: false
+        });
+        hls.loadSource(src);
+        hls.attachMedia(video);
+
+        // Autoplay after manifest parsed
+        hls.on(Hls.Events.MANIFEST_PARSED, async () => {
+          await tryAutoplay();
+        });
+
+        // If an error occurs, fallback to overlay play (silent)
+        hls.on(Hls.Events.ERROR, () => {
+          overlay.style.display = "flex";
+        });
+      } else {
+        // no hls support
+        overlay.style.display = "flex";
+      }
+
+      // Make first subtitle track "showing" if available
+      // (Some browsers require user to select; this helps when allowed.)
+      setTimeout(() => {
+        try {
+          if (video.textTracks && video.textTracks.length) {
+            for (let i = 0; i < video.textTracks.length; i++) {
+              video.textTracks[i].mode = (i === 0) ? "showing" : "disabled";
+            }
+          }
+        } catch (_) {}
+      }, 500);
+    }
+
+    init();
+  </script>
 </body>
 </html>
