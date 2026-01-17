@@ -5,311 +5,480 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>المشاهدة</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
-
   <style>
     :root{
-      --bg:#0b0f17; --panel:#0f1624; --text:#e8eefc; --muted:#9db0d1;
-      --border:rgba(255,255,255,.08); --shadow:0 12px 40px rgba(0,0,0,.45);
-      --accent:#7c5cff;
+      --bg:#0b0f17;
+      --card:#101828;
+      --card2:#0f172a;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --border:rgba(255,255,255,.08);
+      --shadow:0 20px 80px rgba(0,0,0,.55);
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --danger:#ef4444;
+      --radius:18px;
     }
     *{box-sizing:border-box}
     body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background: radial-gradient(1200px 600px at 50% -100px, rgba(124,92,255,.25), transparent 65%),
-                  linear-gradient(180deg, #070a10, var(--bg));
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Arial;
+      background: radial-gradient(900px 500px at 80% 0%, rgba(124,58,237,.18), transparent 60%),
+                  radial-gradient(900px 500px at 15% 20%, rgba(34,197,94,.10), transparent 65%),
+                  var(--bg);
       color:var(--text);
     }
-    header{
-      position:sticky; top:0; z-index:10;
-      background: rgba(11,15,23,.7);
-      backdrop-filter: blur(10px);
-      border-bottom:1px solid var(--border);
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 14px;border:1px solid var(--border);background:rgba(16,24,40,.65);
+      border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter: blur(10px);
+      position:sticky;top:12px;z-index:10;
     }
-    .bar{
-      max-width:1100px; margin:0 auto; padding:14px 16px;
-      display:flex; align-items:center; gap:12px;
+    .brand{
+      display:flex;align-items:center;gap:10px;min-width:0;
     }
-    .back{
-      appearance:none; border:1px solid var(--border); background:rgba(255,255,255,.03);
-      color:var(--text); padding:10px 12px; border-radius:12px; cursor:pointer;
+    .dot{
+      width:12px;height:12px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      box-shadow:0 0 0 6px rgba(124,58,237,.10);
+      flex:0 0 auto;
     }
-    .back:hover{border-color:rgba(124,92,255,.4)}
-    .titleWrap{min-width:0}
-    h1{
-      margin:0; font-size:16px; font-weight:800; letter-spacing:.2px;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    .titlebox{min-width:0}
+    .title{
+      font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
-    .sub{
-      margin-top:2px; font-size:12px; color:var(--muted);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    .subtitle{
+      font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .actions{display:flex;gap:10px;align-items:center;flex:0 0 auto}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:10px 12px;border-radius:14px;border:1px solid var(--border);
+      background:rgba(15,23,42,.7);color:var(--text);cursor:pointer;
+      transition:.15s transform,.15s background,.15s border-color;
+      font-weight:700;font-size:13px;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.14);background:rgba(15,23,42,.9)}
+    .btn.primary{
+      border-color:rgba(124,58,237,.35);
+      background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(34,197,94,.18));
     }
 
-    main{max-width:1100px; margin:0 auto; padding:16px;}
-    .playerCard{
-      background: rgba(15,22,36,.75);
+    .grid{
+      display:grid;grid-template-columns: 1.65fr .85fr;gap:16px;margin-top:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
       border:1px solid var(--border);
-      border-radius:18px;
-      box-shadow: var(--shadow);
+      background:rgba(16,24,40,.55);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
       overflow:hidden;
     }
-    .playerTop{
-      padding:12px 14px;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      border-bottom:1px solid var(--border);
-    }
-    .pill{
-      font-size:12px; color:var(--muted);
-      padding:6px 10px; border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-    }
-    .err{
-      display:none;
-      padding:12px 14px;
-      border-top:1px solid var(--border);
-      background: rgba(255,70,70,.08);
-      color:#ffd7d7;
-      font-size:13px;
-      line-height:1.5;
-    }
-
-    .playerWrap{background:#000}
-    video{
-      width:100%;
-      height:auto;
-      display:block;
+    .playerWrap{
       background:#000;
-    }
-    iframe{
-      display:block;
       width:100%;
       aspect-ratio:16/9;
-      border:0;
+      position:relative;
+    }
+    video, iframe{
+      width:100%;
+      height:100%;
+      display:block;
       background:#000;
     }
+    .meta{
+      padding:14px;
+      display:flex;gap:12px;align-items:flex-start;
+    }
+    .poster{
+      width:92px;height:126px;border-radius:14px;object-fit:cover;
+      border:1px solid var(--border);
+      background:var(--card2);
+      flex:0 0 auto;
+    }
+    .metatxt{min-width:0}
+    .metatxt h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.3;
+      letter-spacing:.2px;
+    }
+    .metatxt .small{
+      margin-top:6px;color:var(--muted);font-size:13px;line-height:1.6;
+      white-space:pre-line;
+    }
 
+    .side{
+      padding:14px;
+    }
+    .side h3{
+      margin:0 0 10px 0;
+      font-size:14px;color:var(--muted);font-weight:800;
+    }
+    .side .box{
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.55);
+      border-radius:16px;
+      padding:12px;
+    }
+    .err{
+      margin-top:10px;
+      padding:10px 12px;
+      border:1px solid rgba(239,68,68,.35);
+      background:rgba(239,68,68,.10);
+      color:#fecaca;
+      border-radius:14px;
+      font-size:13px;
+      display:none;
+      line-height:1.6;
+    }
     .hint{
-      margin-top:12px;
-      font-size:12px;
       color:var(--muted);
+      font-size:13px;
       line-height:1.7;
     }
-    code{
-      background: rgba(255,255,255,.06);
-      border:1px solid var(--border);
-      padding:2px 6px;
-      border-radius:8px;
-    }
   </style>
+
+  <!-- hls.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 </head>
 
 <body>
-  <header>
-    <div class="bar">
-      <button class="back" onclick="history.back()">⬅ رجوع</button>
-      <div class="titleWrap">
-        <h1 id="pageTitle">المشاهدة</h1>
-        <div class="sub" id="pageSub">—</div>
-      </div>
-    </div>
-  </header>
-
-  <main>
-    <div class="playerCard">
-      <div class="playerTop">
-        <div class="pill" id="modePill">—</div>
-        <div class="pill" id="srcPill">—</div>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="dot"></div>
+        <div class="titlebox">
+          <div class="title" id="pageTitle">المشاهدة</div>
+          <div class="subtitle" id="pageSub">—</div>
+        </div>
       </div>
 
-      <div class="playerWrap" id="playerWrap">
-        <video id="video" controls playsinline crossorigin="anonymous" style="display:none"></video>
+      <div class="actions">
+        <a class="btn" href="browse.html">الرجوع</a>
+        <button class="btn primary" id="toggleSubsBtn" type="button">الترجمة</button>
+      </div>
+    </div>
 
-        <iframe
-          id="bunnyFrame"
-          title="Bunny Player"
-          style="display:none"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowfullscreen
-        ></iframe>
+    <div class="grid">
+      <div class="card">
+        <div class="playerWrap" id="playerWrap">
+          <video id="video" controls playsinline crossorigin="anonymous"></video>
+
+          <iframe
+            id="bunnyFrame"
+            title="Bunny Player"
+            style="display:none;border:0"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+
+        <div class="meta">
+          <img id="poster" class="poster" alt="poster" />
+          <div class="metatxt">
+            <h1 id="title">—</h1>
+            <div class="small" id="desc"></div>
+            <div class="err" id="err"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="err" id="errBox"></div>
+      <div class="card side">
+        <h3>معلومات</h3>
+        <div class="box">
+          <div class="hint" id="infoText">
+            إذا لم تعمل الترجمة، جرّب رفع ملفات VTT على Bunny/CDN خاص بك واستعمال روابطها.
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div class="hint">
-      ✅ يدعم تشغيل <code>.m3u8</code> باستخدام hls.js + ترجمة <code>.vtt</code> من روابط خارجية.<br>
-      ⚠️ إذا لم يعمل m3u8 في المتصفح غالباً السبب هو <b>CORS</b> (سيظهر الخطأ في الكونسول).<br>
-      ✅ Bunny embed يعمل عبر <code>iframe</code> ويحتاج سماح <code>frame-src</code> في CSP (ملف netlify.toml بالأسفل).
-    </div>
-  </main>
+  </div>
 
 <script>
-  const $ = (id) => document.getElementById(id);
+  const video = document.getElementById("video");
+  const bunnyFrame = document.getElementById("bunnyFrame");
 
-  const video = $("video");
-  const iframe = $("bunnyFrame");
-  const errBox = $("errBox");
-  const modePill = $("modePill");
-  const srcPill = $("srcPill");
+  const elTitle = document.getElementById("title");
+  const elPageTitle = document.getElementById("pageTitle");
+  const elPageSub = document.getElementById("pageSub");
+  const elDesc = document.getElementById("desc");
+  const elPoster = document.getElementById("poster");
+  const elErr = document.getElementById("err");
+  const toggleSubsBtn = document.getElementById("toggleSubsBtn");
 
   let hls = null;
 
-  function showErr(msg){
-    errBox.style.display = "block";
-    errBox.textContent = msg;
+  function showError(msg){
+    elErr.style.display = "block";
+    elErr.textContent = msg;
   }
-  function clearErr(){
-    errBox.style.display = "none";
-    errBox.textContent = "";
+  function clearError(){
+    elErr.style.display = "none";
+    elErr.textContent = "";
   }
 
   function destroyHls(){
-    try{ if(hls){ hls.destroy(); } }catch(e){}
-    hls = null;
+    if (hls){
+      try { hls.destroy(); } catch(e){}
+      hls = null;
+    }
   }
 
-  function resetPlayers(){
-    clearErr();
+  function showBunny(embedUrl){
     destroyHls();
+    clearError();
 
-    // reset iframe
-    iframe.src = "about:blank";
-    iframe.style.display = "none";
-
-    // reset video
-    try{ video.pause(); }catch(e){}
+    // stop video
+    try { video.pause(); } catch(e){}
     video.removeAttribute("src");
-    // remove tracks
-    [...video.querySelectorAll("track")].forEach(t => t.remove());
     video.load();
+
     video.style.display = "none";
+    bunnyFrame.style.display = "block";
+    bunnyFrame.src = embedUrl;
   }
 
-  function setMeta({title, sub, mode, srcLabel}){
-    $("pageTitle").textContent = title || "المشاهدة";
-    $("pageSub").textContent = sub || "—";
-    modePill.textContent = mode || "—";
-    srcPill.textContent = srcLabel || "—";
+  function showVideo(){
+    bunnyFrame.src = "about:blank";
+    bunnyFrame.style.display = "none";
+    video.style.display = "block";
   }
 
   function isBunnyEmbed(url){
-    try{
-      const u = new URL(url);
-      return u.hostname.includes("player.mediadelivery.net") && u.pathname.includes("/embed/");
-    }catch(e){
-      return false;
+    return typeof url === "string" && url.includes("player.mediadelivery.net/embed/");
+  }
+  function isM3U8(url){
+    return typeof url === "string" && url.toLowerCase().includes(".m3u8");
+  }
+
+  function setSource(url){
+    showVideo();
+    destroyHls();
+    clearError();
+
+    if (!url){
+      showError("الرابط غير موجود.");
+      return;
     }
+
+    if (isM3U8(url)){
+      if (window.Hls && Hls.isSupported()){
+        hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true
+        });
+
+        hls.loadSource(url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.ERROR, function(_, data){
+          if (data && data.fatal){
+            // usually CORS / 403 / blocked segments
+            showError("تعذر تشغيل البث. قد يكون السبب إعدادات الوصول (CORS) أو حظر الرابط.");
+            try { hls.destroy(); } catch(e){}
+            hls = null;
+          }
+        });
+
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")){
+        // Safari
+        video.src = url;
+      } else {
+        showError("المتصفح لا يدعم تشغيل هذا النوع من البث.");
+        return;
+      }
+    } else {
+      // mp4 or other direct file
+      video.src = url;
+    }
+
+    video.play().catch(()=>{});
   }
 
-  function parseSubsFromParams(params){
-    // sub param format: url|label|lang|default(0/1)
-    const subs = params.getAll("sub") || [];
-    return subs.map(s => {
-      const parts = s.split("|");
-      return {
-        url: parts[0] || "",
-        label: parts[1] || "SUB",
-        lang: parts[2] || "en",
-        isDefault: parts[3] === "1"
-      };
-    }).filter(x => x.url);
+  // ----- subtitles -----
+
+  function guessLangFromVttUrl(vttUrl){
+    if (!vttUrl) return "ar";
+    const u = String(vttUrl).toLowerCase();
+
+    // common patterns: /ar_....vtt , /arabic.vtt , ?lang=ar ...
+    if (u.includes("/ar_") || u.includes("lang=ar") || u.includes("/arab") || u.includes("_ar.") || u.endsWith("/ar.vtt") || u.includes("arabic"))
+      return "ar";
+    if (u.includes("/en_") || u.includes("lang=en") || u.includes("_en.") || u.endsWith("/en.vtt") || u.includes("english"))
+      return "en";
+    if (u.includes("/fr_") || u.includes("lang=fr") || u.includes("_fr.") || u.endsWith("/fr.vtt") || u.includes("french"))
+      return "fr";
+
+    return "ar";
   }
 
-  function attachVttTracks(subs){
-    // remove any existing
+  function normalizeSubs(subs){
+    if (!subs) return [];
+
+    // URL param style: sub=url|label|lang|default  joined by || in one param
+    if (typeof subs === "string"){
+      return subs.split("||").map(s=>{
+        const [url, label, lang, def] = s.split("|");
+        return {
+          url: (url || "").trim(),
+          label: (label || "").trim() || "ترجمة",
+          lang: (lang || "").trim(),
+          isDefault: def === "1"
+        };
+      }).filter(x=>x.url);
+    }
+
+    // JSON style: [{lang:'s1',label:'SUB 1',url:'...vtt'}]
+    if (Array.isArray(subs)){
+      return subs.map((s, i) => {
+        const url = (s.url || "").trim();
+        const label = (s.label || `SUB ${i+1}`).trim();
+        const rawLang = (s.lang || "").trim(); // s1/s2...
+        // convert s1/s2... or empty to a real language code
+        const realLang = guessLangFromVttUrl(url) || "ar";
+
+        return {
+          url,
+          label,
+          lang: realLang,
+          isDefault: i === 0
+        };
+      }).filter(x=>x.url);
+    }
+
+    return [];
+  }
+
+  function clearTracks(){
     [...video.querySelectorAll("track")].forEach(t => t.remove());
+  }
 
-    let hasDefault = subs.some(s => s.isDefault);
-    subs.forEach((s, idx) => {
+  function attachTracks(subs){
+    clearTracks();
+    const list = normalizeSubs(subs);
+    if (!list.length) return;
+
+    list.forEach((s, idx) => {
       const t = document.createElement("track");
       t.kind = "subtitles";
       t.label = s.label || `SUB ${idx+1}`;
-      t.srclang = s.lang || `s${idx+1}`;
+      t.srclang = s.lang || "ar";
       t.src = s.url;
-      t.default = hasDefault ? !!s.isDefault : (idx === 0);
+      t.default = !!s.isDefault;
       video.appendChild(t);
     });
+
+    // Show first track by default
+    setTimeout(() => {
+      try {
+        for (const tt of video.textTracks) tt.mode = "hidden";
+        if (video.textTracks.length) video.textTracks[0].mode = "showing";
+      } catch(e){}
+    }, 250);
   }
 
-  function playBunny(embedUrl){
-    resetPlayers();
-    setMeta({
-      title: new URLSearchParams(location.search).get("title") || "مشاهدة",
-      sub: "Bunny Player",
-      mode: "Bunny Embed",
-      srcLabel: "player.mediadelivery.net"
-    });
+  function toggleSubs(){
+    try{
+      if (!video.textTracks || !video.textTracks.length) return;
+      const cur = video.textTracks[0].mode;
+      const next = (cur === "showing") ? "hidden" : "showing";
+      for (const tt of video.textTracks) tt.mode = next;
+    } catch(e){}
+  }
+  toggleSubsBtn.addEventListener("click", toggleSubs);
 
-    iframe.style.display = "block";
-    iframe.src = embedUrl;
+  // ----- foreign series loader -----
+  async function loadForeignSeriesEpisode(seriesTitle, episodeTitle){
+    const res = await fetch("/.netlify/functions/foreignSeries", { cache: "no-store" });
+    if (!res.ok) throw new Error("fetch_failed");
+    const data = await res.json();
+
+    const series = (data || []).find(s => (s.title || "") === seriesTitle);
+    if (!series) throw new Error("series_not_found");
+
+    const ep = (series.episodes || []).find(e => (e.title || "") === episodeTitle);
+    if (!ep) throw new Error("episode_not_found");
+
+    return { series, ep };
   }
 
-  function playHlsOrMp4(src, subs){
-    resetPlayers();
-    video.style.display = "block";
+  // ----- boot -----
+  (async function init(){
+    clearError();
 
-    const host = (() => {
-      try { return new URL(src).hostname; } catch(e){ return "source"; }
-    })();
+    const p = new URLSearchParams(location.search);
 
-    setMeta({
-      title: new URLSearchParams(location.search).get("title") || "مشاهدة",
-      sub: host,
-      mode: src.includes(".m3u8") ? "HLS (m3u8)" : "Video (mp4/webm)",
-      srcLabel: host
-    });
+    const title = p.get("title") || "";
+    const desc  = p.get("desc")  || "";
+    const poster= p.get("img")   || "";
 
-    attachVttTracks(subs);
+    // general source
+    const src = p.get("src") || "";
+    const bunny = p.get("bunny") || ""; // optional direct bunny embed url
 
-    // HLS
-    if (src.includes(".m3u8")) {
-      if (window.Hls && Hls.isSupported()) {
-        hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: true,
-        });
+    // foreign series identifiers
+    const fSeries = p.get("fsTitle") || "";
+    const fEp = p.get("fsEp") || "";
 
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.log("HLS ERROR:", data);
-          const code = data?.response?.code ? ("HTTP " + data.response.code) : "";
-          showErr("HLS Error: " + (data?.details || "unknown") + (code ? (" | " + code) : ""));
-        });
+    // subtitles from URL (optional): &sub=url|label|lang|default  (multiple sub params allowed)
+    const subsParams = p.getAll("sub").map(s => decodeURIComponent(s));
+    const subsJoined = subsParams.length ? subsParams.join("||") : "";
 
-        hls.loadSource(src);
-        hls.attachMedia(video);
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari iOS/macOS
-        video.src = src;
-      } else {
-        showErr("المتصفح لا يدعم تشغيل m3u8 (HLS).");
+    // UI text
+    if (title){
+      elTitle.textContent = title;
+      elPageTitle.textContent = title;
+      document.title = title;
+    }
+    if (desc) elDesc.textContent = desc;
+    if (poster) elPoster.src = poster;
+    else elPoster.style.display = "none";
+
+    try{
+      // 1) Foreign Series mode (fetch episode + subs from JSON)
+      if (fSeries && fEp){
+        const { series, ep } = await loadForeignSeriesEpisode(fSeries, fEp);
+
+        const pageT = `${series.title} - ${ep.title}`;
+        elTitle.textContent = pageT;
+        elPageTitle.textContent = series.title;
+        elPageSub.textContent = ep.title;
+        document.title = pageT;
+
+        if (series.image){
+          elPoster.src = series.image;
+          elPoster.style.display = "block";
+        }
+
+        attachTracks(ep.subs);
+        setSource(ep.hlsUrl);
+        return;
       }
-    } else {
-      // normal mp4/webm
-      video.src = src;
+
+      // 2) Bunny embed
+      const bunnyUrl = bunny || (isBunnyEmbed(src) ? src : "");
+      if (bunnyUrl){
+        elPageSub.textContent = "—";
+        showBunny(bunnyUrl);
+        // Bunny subtitles are handled by Bunny itself if supported; we don't add tracks here.
+        return;
+      }
+
+      // 3) Normal video (mp4/m3u8) + subs from URL
+      if (subsJoined) attachTracks(subsJoined);
+      setSource(src);
+
+    } catch(e){
+      showError("تعذر تحميل المحتوى. تأكد من صحة البيانات والرابط.");
     }
-  }
-
-  // ---- Boot
-  (function init(){
-    const params = new URLSearchParams(location.search);
-    const src = params.get("src") || "";
-    const subs = parseSubsFromParams(params);
-
-    if (!src) {
-      resetPlayers();
-      setMeta({ title: "المشاهدة", sub: "لا يوجد رابط", mode: "—", srcLabel: "—" });
-      showErr("لا يوجد رابط فيديو. ارجع واختر فيلم/حلقة من جديد.");
-      return;
-    }
-
-    if (isBunnyEmbed(src)) {
-      playBunny(src);
-      return;
-    }
-
-    // Default: HLS or mp4
-    playHlsOrMp4(src, subs);
   })();
 </script>
 </body>
