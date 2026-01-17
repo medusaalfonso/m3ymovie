@@ -3,191 +3,356 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>مشاهدة</title>
+  <title>المشاهدة</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+  <!-- HLS.js for m3u8 -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 
   <style>
     :root{
-      --bg0:#06070b; --bg1:#0b0e17;
-      --text:#e9ecf7; --muted:#aab2d3;
-      --stroke: rgba(255,255,255,.10);
-      --shadow: 0 24px 70px rgba(0,0,0,.55);
-      --radius:18px;
+      --bg:#0b0f17;
+      --card:#0f1626;
+      --card2:#121c30;
+      --text:#e7ecff;
+      --muted:#a8b2d1;
+      --border:rgba(255,255,255,.08);
+      --accent:#7c5cff;
+      --danger:#ef4444;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:Tajawal, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 80% 10%, rgba(124,92,255,.18), transparent 60%),
+                  radial-gradient(900px 500px at 10% 20%, rgba(34,197,94,.10), transparent 55%),
+                  var(--bg);
       color:var(--text);
-      background:
-        radial-gradient(1200px 600px at 75% 20%, rgba(124,92,255,.18), transparent 55%),
-        radial-gradient(900px 500px at 15% 80%, rgba(35,213,171,.12), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      padding:18px 14px 28px;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial;
+      direction: rtl;
     }
-    .wrap{max-width:1100px;margin:0 auto}
-    .top{
-      display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
-      margin-bottom:12px;
+    .container{max-width:1100px;margin:0 auto;padding:22px}
+    .nav{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 18px;border:1px solid var(--border);
+      background:rgba(15,22,38,.7);backdrop-filter: blur(10px);
+      border-radius:16px;
     }
-    h1{margin:0;font-size:20px;font-weight:900;line-height:1.6}
-    .sub{margin:6px 0 0;color:var(--muted);line-height:1.8;font-size:13px}
     .btn{
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.25);
-      color: var(--text);
-      border-radius: 14px;
-      padding:10px 12px;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      border:1px solid var(--border);
+      background: rgba(18,28,48,.7);
+      color:var(--text);
+      padding:10px 12px;border-radius:12px;
       cursor:pointer;
-      font-weight:900;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
+      user-select:none;
     }
-    .playerCard{
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(14,18,32,.65);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
+    .btn:hover{border-color: rgba(124,92,255,.45)}
+    .btn.primary{background:rgba(124,92,255,.22);border-color: rgba(124,92,255,.35)}
+    .panel{
+      margin-top:16px;
+      border:1px solid var(--border);
+      background: rgba(15,22,38,.65);
+      border-radius:16px;
+      padding:14px;
     }
-
-    /* Native video */
+    .titleRow{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    h1{margin:0;font-size:18px}
+    .small{color:var(--muted);font-size:12px;line-height:1.6}
     video{
       width:100%;
-      height:auto;
-      display:block;
+      max-height:70vh;
+      border-radius:16px;
+      background:#000;
+      border:1px solid var(--border);
+      outline:none;
+    }
+    iframe{
+      width:100%;
+      height:70vh;
+      border-radius:16px;
+      border:1px solid var(--border);
       background:#000;
     }
-
-    /* Bunny iframe container (keeps 16:9) */
-    .frameWrap{
-      position:relative;
-      width:100%;
-      aspect-ratio: 16 / 9;
-      background:#000;
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;color:var(--muted);
+      border:1px solid var(--border);
+      padding:6px 8px;border-radius:999px;
+      width:fit-content;
     }
-    .frameWrap iframe{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      border:0;
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .codeBox{
+      margin-top:12px;
+      border:1px solid var(--border);
+      background: rgba(18,28,48,.55);
+      border-radius:14px;
+      padding:12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      cursor:pointer;
     }
-
-    .msg{color:var(--muted);margin-top:12px;min-height:22px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   </style>
-
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1 id="title">...</h1>
-        <div class="sub" id="subtitle">إذا لم يعمل الفيديو، جرّب تحديث الصفحة.</div>
+  <div class="container">
+    <div class="nav">
+      <div class="row">
+        <a class="btn ghost" href="/browse.html">⬅ رجوع للمكتبة</a>
+        <span class="badge" id="typeBadge">مشاهدة</span>
       </div>
-      <a class="btn" href="/browse.html">⬅ العودة للمكتبة</a>
+      <div class="row">
+        <button class="btn" onclick="toggleSubtitles()">CC</button>
+        <button class="btn" onclick="reloadPlayer()">🔄 إعادة تحميل</button>
+      </div>
     </div>
 
-    <div class="playerCard" id="playerCard">
-      <!-- we will inject either <video> or <iframe> here -->
-    </div>
+    <div class="panel">
+      <div class="titleRow">
+        <div>
+          <h1 id="pageTitle">...</h1>
+          <div class="small" id="pageSub">جاهز للتشغيل</div>
+        </div>
+      </div>
 
-    <div id="msg" class="msg"></div>
+      <!-- Players -->
+      <div id="playerArea">
+        <video id="video" controls playsinline></video>
+      </div>
+
+      <div class="small" id="subsInfo" style="margin-top:10px;"></div>
+
+      <!-- Optional: clickable copy box for code (if you still use it) -->
+      <div class="codeBox" id="copyBox" style="display:none" onclick="copyText()">
+        <div>
+          <div class="small">اضغط لنسخ</div>
+          <div class="mono" id="copyValue"></div>
+        </div>
+        <div class="btn primary" style="pointer-events:none">نسخ</div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const titleEl = document.getElementById("title");
-    const subtitleEl = document.getElementById("subtitle");
-    const msgEl = document.getElementById("msg");
-    const playerCard = document.getElementById("playerCard");
+    let hlsInstance = null;
 
-    function qp(name){
-      const u = new URL(location.href);
-      return u.searchParams.get(name) || "";
+    function qs(name){
+      return new URLSearchParams(location.search).get(name) || "";
     }
 
-    function renderBunnyIframe(url){
-      subtitleEl.textContent = "تشغيل عبر Bunny Player.";
-      playerCard.innerHTML = `
-        <div class="frameWrap">
-          <iframe
-            src="${url}"
-            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
-        </div>
-      `;
+    function setTitle(main, sub){
+      document.getElementById("pageTitle").textContent = main || "المشاهدة";
+      document.getElementById("pageSub").textContent = sub || "";
+      document.title = main ? ("المشاهدة | " + main) : "المشاهدة";
     }
 
-    function renderVideoTag(){
-      subtitleEl.textContent = "تشغيل عبر مشغل الموقع.";
-      playerCard.innerHTML = `<video id="video" controls playsinline></video>`;
+    function setBadge(text){
+      document.getElementById("typeBadge").textContent = text || "مشاهدة";
+    }
+
+    function setSubsInfo(text){
+      document.getElementById("subsInfo").textContent = text || "";
+    }
+
+    function clearHls(){
+      if (hlsInstance) {
+        try { hlsInstance.destroy(); } catch(e) {}
+        hlsInstance = null;
+      }
+    }
+
+    function base64PayloadToJson(p){
+      // payload was created using: btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+      const json = decodeURIComponent(escape(atob(p)));
+      return JSON.parse(json);
+    }
+
+    function ensureVideo(){
+      const area = document.getElementById("playerArea");
+      area.innerHTML = `<video id="video" controls playsinline></video>`;
       return document.getElementById("video");
     }
 
-    async function load(){
-      const id = qp("id");
-      if (!id) {
-        msgEl.textContent = "رابط غير صحيح.";
-        return;
-      }
-
-      const res = await fetch("/.netlify/functions/stream?id=" + encodeURIComponent(id));
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        msgEl.textContent = data.error || "فشل تحميل الفيديو.";
-        return;
-      }
-
-      titleEl.textContent = data.title || "مشاهدة";
-      const url = data.url;
-      const kind = data.kind || "hls";
-
-      // ✅ Bunny embed
-      if (kind === "bunny_embed") {
-        renderBunnyIframe(url);
-        msgEl.textContent = "";
-        return;
-      }
-
-      // ✅ MP4 / HLS inside <video>
-      const video = renderVideoTag();
-
-      if (kind === "mp4") {
-        video.src = url;
-        msgEl.textContent = "";
-        return;
-      }
-
-      // HLS
-      if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = url;
-        msgEl.textContent = "";
-        return;
-      }
-
-      if (window.Hls && Hls.isSupported()) {
-        const hls = new Hls({ enableWorker: true });
-        hls.loadSource(url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.ERROR, function (_, e) {
-          msgEl.textContent = "حدث خطأ أثناء تشغيل HLS.";
-          console.log(e);
-        });
-        return;
-      }
-
-      msgEl.textContent = "متصفحك لا يدعم HLS. جرّب متصفح آخر.";
+    function ensureIframe(src){
+      const area = document.getElementById("playerArea");
+      area.innerHTML = `<iframe src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
     }
 
-    load();
+    function loadHls(videoEl, src){
+      clearHls();
+
+      // remove old tracks
+      [...videoEl.querySelectorAll("track")].forEach(t => t.remove());
+
+      if (window.Hls && Hls.isSupported()) {
+        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+        hlsInstance.loadSource(src);
+        hlsInstance.attachMedia(videoEl);
+
+        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+          if (data && data.fatal) {
+            console.error("HLS fatal error:", data);
+            alert("تعذّر تشغيل الفيديو. قد يكون الرابط غير صالح أو محمي أو يمنع CORS.");
+          }
+        });
+      } else if (videoEl.canPlayType("application/vnd.apple.mpegurl")) {
+        // Safari
+        videoEl.src = src;
+      } else {
+        alert("المتصفح لا يدعم تشغيل m3u8 على هذا الجهاز.");
+      }
+    }
+
+    function addSubtitleTracks(videoEl, subs){
+      // subs: [{lang,label,url}]
+      if (!subs || !subs.length) {
+        setSubsInfo("⚠️ لا توجد ترجمات لهذه الحلقة");
+        return;
+      }
+
+      subs.forEach((s, idx) => {
+        const track = document.createElement("track");
+        track.kind = "subtitles";
+        track.label = s.label || `SUB ${idx+1}`;
+        track.srclang = s.lang || `s${idx+1}`;
+        track.src = s.url;
+        track.default = idx === 0;
+        videoEl.appendChild(track);
+      });
+
+      setSubsInfo(`✅ الترجمات متاحة (${subs.length}) — افتح قائمة CC داخل المشغل`);
+    }
+
+    function parseSpecialSrc(src){
+      // Bunny embed: bunny:LIBID:VIDEOID
+      if (src.startsWith("bunny:")) {
+        const parts = src.split(":");
+        return { kind: "bunny", lib: parts[1], id: parts[2] };
+      }
+
+      // Dailymotion:
+      // dailymotion:x8l1rp8 OR full geo link
+      if (src.startsWith("dailymotion:")) {
+        return { kind: "dailymotion", id: src.split(":")[1] };
+      }
+
+      if (src.includes("geo.dailymotion.com/player.html?video=")) {
+        const u = new URL(src);
+        return { kind: "dailymotion-full", url: u.toString() };
+      }
+
+      return { kind: "hls", url: src };
+    }
+
+    function boot(){
+      const type = qs("type");
+      const title = qs("title");
+      const series = qs("series");
+      const ep = qs("ep");
+      const src = qs("src");
+      const payload = qs("payload");
+
+      // default copy box hidden (only if you still want it somewhere)
+      document.getElementById("copyBox").style.display = "none";
+
+      // FOREIGN EP (payload contains {hlsUrl, subs[]})
+      if (type === "foreign-ep") {
+        setBadge("مسلسل أجنبي");
+        setTitle(series || "مسلسل أجنبي", ep || "");
+        const epObj = base64PayloadToJson(payload);
+
+        const video = ensureVideo();
+        addSubtitleTracks(video, epObj.subs || []);
+        loadHls(video, epObj.hlsUrl);
+        return;
+      }
+
+      // ARABIC SERIES EP (src is m3u8)
+      if (type === "series-ep") {
+        setBadge("مسلسل");
+        setTitle(series || "مسلسل", ep || "");
+        const video = ensureVideo();
+        setSubsInfo(""); // no subs by default
+        loadHls(video, src);
+        return;
+      }
+
+      // FILM
+      if (type === "film") {
+        setBadge("فيلم");
+        setTitle(title || "فيلم", "");
+
+        const info = parseSpecialSrc(src);
+
+        if (info.kind === "bunny") {
+          // Bunny iframe embed
+          const embed = `https://player.mediadelivery.net/embed/${info.lib}/${info.id}`;
+          ensureIframe(embed);
+          setSubsInfo("");
+          return;
+        }
+
+        if (info.kind === "dailymotion") {
+          const dm = `https://geo.dailymotion.com/player.html?video=${encodeURIComponent(info.id)}`;
+          ensureIframe(dm);
+          setSubsInfo("");
+          return;
+        }
+
+        if (info.kind === "dailymotion-full") {
+          ensureIframe(info.url);
+          setSubsInfo("");
+          return;
+        }
+
+        // normal HLS film
+        const video = ensureVideo();
+        setSubsInfo("");
+        loadHls(video, info.url);
+        return;
+      }
+
+      // fallback
+      setBadge("مشاهدة");
+      setTitle("المشاهدة", "لم يتم تمرير بيانات صحيحة للصفحة");
+      setSubsInfo("⚠️ افتح الرابط من صفحة المكتبة.");
+    }
+
+    // ====== buttons ======
+    function toggleSubtitles(){
+      const video = document.getElementById("video");
+      if (!video) return alert("لا يوجد مشغل فيديو في هذه الصفحة.");
+
+      const tracks = video.textTracks;
+      if (!tracks || !tracks.length) return alert("لا توجد ترجمات.");
+
+      // toggle first track
+      const t = tracks[0];
+      t.mode = (t.mode === "showing") ? "disabled" : "showing";
+      alert(t.mode === "showing" ? "تم تشغيل الترجمة" : "تم إيقاف الترجمة");
+    }
+
+    function reloadPlayer(){
+      location.reload();
+    }
+
+    function copyText(){
+      const val = document.getElementById("copyValue").textContent || "";
+      if (!val) return;
+
+      navigator.clipboard.writeText(val).then(()=>{
+        alert("تم النسخ ✅");
+      }).catch(()=>{
+        alert("تعذر النسخ. انسخ يدويًا.");
+      });
+    }
+
+    // Start
+    boot();
   </script>
 </body>
 </html>
