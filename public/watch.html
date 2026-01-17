@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>المشاهدة</title>
+  <title>مشاهدة</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,107 +11,183 @@
 
   <style>
     :root{
-      --bg0:#06070b; --bg1:#0b0e17; --stroke:#242a3f;
-      --text:#e9ecf7; --muted:#aab2d3; --accent:#7c5cff; --accent2:#23d5ab;
-      --shadow: 0 24px 70px rgba(0,0,0,.55); --radius:18px;
+      --bg0:#06070b; --bg1:#0b0e17;
+      --text:#e9ecf7; --muted:#aab2d3;
+      --stroke: rgba(255,255,255,.10);
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --radius:18px;
     }
     *{box-sizing:border-box}
     body{
-      margin:0; font-family:Tajawal,Arial,sans-serif; color:var(--text);
+      margin:0;
+      font-family:Tajawal, Arial, sans-serif;
+      color:var(--text);
       background:
-        radial-gradient(1200px 600px at 75% 20%, rgba(124,92,255,.25), transparent 55%),
-        radial-gradient(900px 500px at 15% 80%, rgba(35,213,171,.16), transparent 60%),
+        radial-gradient(1200px 600px at 75% 20%, rgba(124,92,255,.18), transparent 55%),
+        radial-gradient(900px 500px at 15% 80%, rgba(35,213,171,.12), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
-      padding:22px 14px;
+      padding:18px 14px 28px;
     }
     .wrap{max-width:1100px;margin:0 auto}
-    .top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
-    .title{margin:0;font-size:24px}
-    .sub{margin:6px 0 0;color:var(--muted);line-height:1.8}
-    .card{
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(14,18,32,.88), rgba(14,18,32,.62));
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      padding:14px;
+    .top{
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+      margin-bottom:12px;
     }
-    video{
-      width:100%; max-height:72vh; background:#000; border-radius:14px; outline:none;
-    }
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:10px}
+    h1{margin:0;font-size:20px;font-weight:900;line-height:1.6}
+    .sub{margin:6px 0 0;color:var(--muted);line-height:1.8;font-size:13px}
     .btn{
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid var(--stroke);
       background: rgba(0,0,0,.25);
-      color:var(--text);
-      border-radius:12px;
+      color: var(--text);
+      border-radius: 14px;
       padding:10px 12px;
       cursor:pointer;
-      font-weight:800;
+      font-weight:900;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
     }
-    .msg{color:var(--muted);min-height:20px}
+    .playerCard{
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(14,18,32,.65);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* Native video */
+    video{
+      width:100%;
+      height:auto;
+      display:block;
+      background:#000;
+    }
+
+    /* Bunny iframe container (keeps 16:9) */
+    .frameWrap{
+      position:relative;
+      width:100%;
+      aspect-ratio: 16 / 9;
+      background:#000;
+    }
+    .frameWrap iframe{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+
+    .msg{color:var(--muted);margin-top:12px;min-height:22px}
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
       <div>
-        <h1 class="title" id="t">جارٍ التحميل...</h1>
-        <div class="sub">مشاهدة خاصة — الرابط محمي.</div>
+        <h1 id="title">...</h1>
+        <div class="sub" id="subtitle">إذا لم يعمل الفيديو، جرّب تحديث الصفحة.</div>
       </div>
-      <button class="btn" onclick="location.href='/browse.html'">العودة للمكتبة</button>
+      <a class="btn" href="/browse.html">⬅ العودة للمكتبة</a>
     </div>
 
-    <div class="card">
-      <video id="v" controls playsinline></video>
-      <div class="row">
-        <div class="msg" id="msg"></div>
-      </div>
+    <div class="playerCard" id="playerCard">
+      <!-- we will inject either <video> or <iframe> here -->
     </div>
+
+    <div id="msg" class="msg"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    const msg = document.getElementById("msg");
-    const video = document.getElementById("v");
-    const titleEl = document.getElementById("t");
+    const titleEl = document.getElementById("title");
+    const subtitleEl = document.getElementById("subtitle");
+    const msgEl = document.getElementById("msg");
+    const playerCard = document.getElementById("playerCard");
 
-    function getId(){
+    function qp(name){
       const u = new URL(location.href);
-      return u.searchParams.get("id") || "";
+      return u.searchParams.get(name) || "";
+    }
+
+    function renderBunnyIframe(url){
+      subtitleEl.textContent = "تشغيل عبر Bunny Player.";
+      playerCard.innerHTML = `
+        <div class="frameWrap">
+          <iframe
+            src="${url}"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+      `;
+    }
+
+    function renderVideoTag(){
+      subtitleEl.textContent = "تشغيل عبر مشغل الموقع.";
+      playerCard.innerHTML = `<video id="video" controls playsinline></video>`;
+      return document.getElementById("video");
     }
 
     async function load(){
-      const me = await fetch("/.netlify/functions/me").then(r=>r.json());
-      if (!me.loggedIn) { location.href="/"; return; }
+      const id = qp("id");
+      if (!id) {
+        msgEl.textContent = "رابط غير صحيح.";
+        return;
+      }
 
-      const id = getId();
-      if (!id) { location.href="/browse.html"; return; }
+      const res = await fetch("/.netlify/functions/stream?id=" + encodeURIComponent(id));
+      const data = await res.json().catch(() => ({}));
 
-      msg.textContent = "جارٍ جلب رابط التشغيل...";
-      const res = await fetch(`/.netlify/functions/stream?id=${encodeURIComponent(id)}`);
-      const data = await res.json();
-      if (!res.ok){ msg.textContent = data.error || "فشل"; return; }
+      if (!res.ok) {
+        msgEl.textContent = data.error || "فشل تحميل الفيديو.";
+        return;
+      }
 
-      titleEl.textContent = data.title || "المشاهدة";
-      const hlsUrl = data.hls;
+      titleEl.textContent = data.title || "مشاهدة";
+      const url = data.url;
+      const kind = data.kind || "hls";
+
+      // ✅ Bunny embed
+      if (kind === "bunny_embed") {
+        renderBunnyIframe(url);
+        msgEl.textContent = "";
+        return;
+      }
+
+      // ✅ MP4 / HLS inside <video>
+      const video = renderVideoTag();
+
+      if (kind === "mp4") {
+        video.src = url;
+        msgEl.textContent = "";
+        return;
+      }
+
+      // HLS
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = url;
+        msgEl.textContent = "";
+        return;
+      }
 
       if (window.Hls && Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(hlsUrl);
+        const hls = new Hls({ enableWorker: true });
+        hls.loadSource(url);
         hls.attachMedia(video);
-        hls.on(Hls.Events.ERROR, (_, err) => {
-          msg.textContent = "خطأ في التشغيل: " + err.type;
+        hls.on(Hls.Events.ERROR, function (_, e) {
+          msgEl.textContent = "حدث خطأ أثناء تشغيل HLS.";
+          console.log(e);
         });
-        msg.textContent = "جاهز للتشغيل.";
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = hlsUrl;
-        msg.textContent = "جاهز للتشغيل.";
-      } else {
-        msg.textContent = "المتصفح لا يدعم تشغيل HLS.";
+        return;
       }
+
+      msgEl.textContent = "متصفحك لا يدعم HLS. جرّب متصفح آخر.";
     }
 
-    load().catch(e => msg.textContent = "خطأ: " + (e?.message || e));
+    load();
   </script>
 </body>
 </html>
