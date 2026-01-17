@@ -9,7 +9,6 @@
     :root{
       --bg:#070a12;
       --card:#0c1324;
-      --card2:#0a1020;
       --text:#e8ecff;
       --muted:#a9b3d6;
       --line:rgba(255,255,255,.10);
@@ -37,15 +36,10 @@
       box-shadow: var(--shadow);
       backdrop-filter: blur(10px);
     }
-    .titlebox{display:flex;flex-direction:column;gap:6px;min-width:0}
     .title{
       font-weight:800;font-size:16px;letter-spacing:.2px;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .subline{
-      display:none; /* URL line removed */
-      color:var(--muted);font-size:12px;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      min-width:0;
     }
     .btn{
       appearance:none;border:1px solid rgba(255,255,255,.16);
@@ -69,7 +63,6 @@
       box-shadow: var(--shadow);
       position:relative;
     }
-
     .posterBG{
       position:absolute;inset:0;
       background-size:cover;background-position:center;
@@ -77,13 +70,8 @@
       opacity:.16; transform: scale(1.08);
       pointer-events:none;
     }
+    .playerInner{position:relative;padding:14px}
 
-    .playerInner{
-      position:relative;
-      padding:14px;
-    }
-
-    /* Video */
     video{
       width:100%;
       max-height:70vh;
@@ -99,21 +87,21 @@
       background:#000;
     }
 
-    /* Subtitle styling */
+    /* Smaller captions (but not removed) */
     video::cue{
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.35;
       color: #ffffff;
       background: rgba(0,0,0,0.55);
-      padding: 4px 8px;
+      padding: 3px 7px;
       border-radius: 6px;
-      text-shadow: 0 2px 6px rgba(0,0,0,.6);
+      text-shadow: 0 2px 6px rgba(0,0,0,.65);
     }
     @media (max-width:600px){
       video::cue{font-size:12px}
     }
 
-    /* Autoplay overlay (only when needed) */
+    /* Autoplay blocked overlay */
     .overlay{
       position:absolute;
       inset:14px;
@@ -148,46 +136,49 @@
       padding: 0 10px;
     }
 
-    .hint{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:12px;
-      display:none; /* keep clean; no debug text */
+    /* Unmute button (only shows when muted autoplay succeeded) */
+    .unmute{
+      position:absolute;
+      left: 22px;
+      bottom: 22px;
+      display:none;
+      z-index:5;
+      padding:10px 14px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.18);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      backdrop-filter: blur(6px);
     }
+    .unmute:hover{background: rgba(0,0,0,.68)}
   </style>
 
-  <!-- hls.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 </head>
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div class="titlebox">
-        <div id="t" class="title">المشاهدة</div>
-        <div id="s" class="subline"></div>
-      </div>
+      <div id="t" class="title">المشاهدة</div>
       <a class="btn" href="browse.html">رجوع للمكتبة</a>
     </div>
 
     <div class="playerCard" id="card">
       <div class="posterBG" id="bg"></div>
-      <div class="playerInner" id="playerRoot">
 
-        <!-- HLS/MP4 player -->
+      <div class="playerInner">
         <video id="video" controls playsinline></video>
-
-        <!-- Bunny iframe -->
         <iframe id="bunny" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="display:none;"></iframe>
 
-        <!-- Autoplay overlay (shown only if browser blocks autoplay) -->
         <div class="overlay" id="overlay">
           <div style="text-align:center;">
             <button class="playBtn" id="playBtn">▶ تشغيل</button>
-            <small>قد يمنع المتصفح التشغيل التلقائي أحيانًا. اضغط تشغيل للمتابعة.</small>
+            <small>إذا لم يبدأ تلقائيًا اضغط تشغيل.</small>
           </div>
         </div>
 
-        <div class="hint" id="hint"></div>
+        <button class="unmute" id="unmuteBtn">🔊 تشغيل الصوت</button>
       </div>
     </div>
   </div>
@@ -197,36 +188,30 @@
       return new URLSearchParams(location.search).get(name) || "";
     }
 
-    const type   = (qs("type") || "").toLowerCase();      // hls | mp4 | bunny
-    const src    = qs("src");                              // m3u8/mp4 or bunny embed URL
+    const type   = (qs("type") || "").toLowerCase(); // hls | mp4 | bunny
+    const src    = qs("src");
     const title  = qs("title") || "المشاهدة";
     const poster = qs("poster");
-
-    // Subtitles:
-    // - if you pass sub=URL : single subtitle
-    // - if you pass subkey=KEY : we fetch subs from catalog endpoint (foreign series uses subs array)
-    const sub    = qs("sub");     // direct vtt url
-    const subkey = qs("subkey");  // key to look up subs from API response (if your watch links use it)
+    const sub    = qs("sub");     // direct vtt url (optional)
+    const subkey = qs("subkey");  // key to lookup subs in API (optional)
 
     const elT = document.getElementById("t");
-    const elS = document.getElementById("s");
     const elBg = document.getElementById("bg");
     const video = document.getElementById("video");
     const iframe = document.getElementById("bunny");
     const overlay = document.getElementById("overlay");
     const playBtn = document.getElementById("playBtn");
+    const unmuteBtn = document.getElementById("unmuteBtn");
 
     elT.textContent = title;
-    elS.textContent = ""; // URL removed
+
     if (poster) {
       elBg.style.backgroundImage = `url("${poster}")`;
       video.poster = poster;
     }
 
     function clearTracks(){
-      // Remove existing <track> elements
-      const tracks = Array.from(video.querySelectorAll("track"));
-      tracks.forEach(t => t.remove());
+      Array.from(video.querySelectorAll("track")).forEach(t => t.remove());
     }
 
     function addTrack(url, label, lang, isDefault){
@@ -240,23 +225,47 @@
       video.appendChild(tr);
     }
 
-    async function loadSubsFromCatalogIfNeeded(){
-      // If direct `sub` provided, use it
+    function setTracksShowing(){
+      try{
+        if (!video.textTracks) return;
+        for (let i=0;i<video.textTracks.length;i++){
+          video.textTracks[i].mode = (i===0) ? "showing" : "disabled";
+        }
+      }catch(e){}
+    }
+
+    function findSubsByKey(data, key){
+      const stack = [data];
+      while (stack.length) {
+        const cur = stack.pop();
+        if (!cur) continue;
+
+        if (Array.isArray(cur)) {
+          for (const x of cur) stack.push(x);
+          continue;
+        }
+
+        if (typeof cur === "object") {
+          if (cur.subsKey === key && Array.isArray(cur.subs)) return cur.subs;
+          if (cur.key === key && Array.isArray(cur.subs)) return cur.subs;
+
+          for (const v of Object.values(cur)) stack.push(v);
+        }
+      }
+      return null;
+    }
+
+    async function loadSubs(){
+      // direct sub
       if (sub) {
         addTrack(sub, "Arabic", "ar", true);
         return;
       }
-
-      // If no subkey, nothing to load
       if (!subkey) return;
 
-      // We try to fetch from your Netlify functions:
-      // - catalog (movies/series)
-      // - foreignSeries (foreign series)
-      // and search for a matching subsKey (your backend uses keys like subs_....)
       const endpoints = [
-        "/.netlify/functions/catalog",
-        "/.netlify/functions/foreignSeries"
+        "/.netlify/functions/foreignSeries",
+        "/.netlify/functions/catalog"
       ];
 
       for (const ep of endpoints) {
@@ -264,13 +273,8 @@
           const r = await fetch(ep + "?t=" + Date.now(), { cache: "no-store" });
           if (!r.ok) continue;
           const data = await r.json();
-
-          // data might be array of movies+series+foreign series in different shapes.
-          // We scan for any episode that has subsKey === subkey, then read its subs array.
           const subsFound = findSubsByKey(data, subkey);
           if (subsFound && subsFound.length) {
-            // If subs objects have {lang:"s1", label:"SUB 1", url:"..."}
-            // We map them into <track> entries.
             subsFound.forEach((x, idx) => {
               const label = x.label || (x.lang ? x.lang.toUpperCase() : ("SUB " + (idx+1)));
               const lang  = x.lang || "ar";
@@ -278,96 +282,93 @@
             });
             return;
           }
-        } catch (e) {
-          // silent (no debug)
-        }
+        } catch (e) {}
       }
-    }
-
-    function findSubsByKey(data, key){
-      // Flexible deep scan for objects with subsKey===key and an array "subs"
-      const stack = [data];
-      while (stack.length) {
-        const cur = stack.pop();
-        if (!cur) continue;
-
-        if (Array.isArray(cur)) {
-          for (let i = 0; i < cur.length; i++) stack.push(cur[i]);
-          continue;
-        }
-
-        if (typeof cur === "object") {
-          // Match pattern:
-          // { subsKey: "...", subs: [ {lang,label,url}, ... ] }
-          if (cur.subsKey === key && Array.isArray(cur.subs)) {
-            return cur.subs;
-          }
-
-          // sometimes backend might put it directly on episode:
-          // { subs: [...], key:"..." } etc
-          if (cur.key === key && Array.isArray(cur.subs)) {
-            return cur.subs;
-          }
-
-          // push nested values
-          for (const v of Object.values(cur)) stack.push(v);
-        }
-      }
-      return null;
     }
 
     async function tryAutoplay(){
-      // Attempt autoplay unmuted
+      // Try autoplay with sound first (often blocked)
       try {
+        video.muted = false;
         await video.play();
         overlay.style.display = "none";
+        unmuteBtn.style.display = "none";
         return true;
       } catch (_) {}
 
-      // If blocked, try muted autoplay
+      // Fallback: muted autoplay (usually allowed)
       try {
         video.muted = true;
         await video.play();
         overlay.style.display = "none";
+        unmuteBtn.style.display = "block";
         return true;
       } catch (_) {}
 
-      // Still blocked -> show overlay and let user click
+      // Still blocked
       overlay.style.display = "flex";
+      unmuteBtn.style.display = "none";
       return false;
+    }
+
+    function hookUnmute(){
+      const unmute = async () => {
+        try {
+          video.muted = false;
+          await video.play();
+          unmuteBtn.style.display = "none";
+        } catch (_) {}
+      };
+      unmuteBtn.onclick = unmute;
+
+      // Also unmute on first user interaction anywhere
+      const once = async () => {
+        document.removeEventListener("click", once);
+        document.removeEventListener("touchstart", once);
+        await unmute();
+      };
+      document.addEventListener("click", once, { once:true });
+      document.addEventListener("touchstart", once, { once:true });
     }
 
     playBtn.addEventListener("click", async () => {
       overlay.style.display = "none";
       try {
-        // if muted autoplay was required, keep muted until user gesture then unmute
         await video.play();
-        video.muted = false;
+        // If playing muted, show unmute button
+        if (video.muted) unmuteBtn.style.display = "block";
       } catch (_) {
-        // if still fails, keep overlay
         overlay.style.display = "flex";
       }
     });
 
     async function init(){
+      if (!src) return;
+
       // Bunny embed
       if (type === "bunny") {
         video.style.display = "none";
         overlay.style.display = "none";
+        unmuteBtn.style.display = "none";
         iframe.style.display = "block";
         iframe.src = src;
         return;
       }
 
-      // HLS / MP4
+      // HLS/MP4
       iframe.style.display = "none";
       video.style.display = "block";
       clearTracks();
 
-      // Load subtitles first (tracks should exist before play)
-      await loadSubsFromCatalogIfNeeded();
+      await loadSubs();
 
-      // Play source
+      // Force tracks visible when possible
+      video.addEventListener("loadedmetadata", setTracksShowing);
+      video.addEventListener("loadeddata", setTracksShowing);
+      setTimeout(setTracksShowing, 700);
+
+      hookUnmute();
+
       if (type === "mp4") {
         video.src = src;
         video.load();
@@ -375,46 +376,24 @@
         return;
       }
 
-      // Default: HLS
+      // HLS
       if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari iOS/mac
         video.src = src;
         video.load();
         await tryAutoplay();
       } else if (window.Hls) {
-        const hls = new Hls({
-          maxBufferLength: 30,
-          enableWorker: true,
-          lowLatencyMode: false
-        });
+        const hls = new Hls({ enableWorker:true });
         hls.loadSource(src);
         hls.attachMedia(video);
-
-        // Autoplay after manifest parsed
         hls.on(Hls.Events.MANIFEST_PARSED, async () => {
           await tryAutoplay();
         });
-
-        // If an error occurs, fallback to overlay play (silent)
         hls.on(Hls.Events.ERROR, () => {
           overlay.style.display = "flex";
         });
       } else {
-        // no hls support
         overlay.style.display = "flex";
       }
-
-      // Make first subtitle track "showing" if available
-      // (Some browsers require user to select; this helps when allowed.)
-      setTimeout(() => {
-        try {
-          if (video.textTracks && video.textTracks.length) {
-            for (let i = 0; i < video.textTracks.length; i++) {
-              video.textTracks[i].mode = (i === 0) ? "showing" : "disabled";
-            }
-          }
-        } catch (_) {}
-      }, 500);
     }
 
     init();
