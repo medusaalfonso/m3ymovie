@@ -26,6 +26,7 @@
       direction: rtl;
     }
     .container{max-width:1150px;margin:0 auto;padding:22px}
+
     .nav{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
       padding:14px 18px;border:1px solid var(--border);
@@ -149,7 +150,20 @@
       text-align:right;
     }
     .epBtn:hover{border-color: rgba(124,92,255,.45)}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+
+    .debug{
+      margin-top:12px;
+      border:1px dashed rgba(255,255,255,.15);
+      background: rgba(0,0,0,.25);
+      border-radius:14px;
+      padding:12px;
+      color: rgba(231,236,255,.9);
+      display:none;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12px;
+      line-height:1.6;
+    }
   </style>
 </head>
 
@@ -160,7 +174,7 @@
         <div class="logo"></div>
         <div>
           <h1>مكتبتي</h1>
-          <p>أفلام ومسلسلات</p>
+          <p>أفلام • مسلسلات • مسلسلات أجنبية</p>
         </div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -170,60 +184,66 @@
 
     <div class="hero">
       <h2>اختر شيئًا لتشاهده 🍿</h2>
-      <p>الأفلام • المسلسلات</p>
+      <p>يتم تحميل المحتوى تلقائيًا من catalog.</p>
 
       <div class="tabs">
         <button class="tab active" id="tab-films" onclick="setTab('films')">الأفلام</button>
         <button class="tab" id="tab-series" onclick="setTab('series')">المسلسلات</button>
+        <button class="tab" id="tab-foreign" onclick="setTab('foreign')">مسلسلات أجنبية</button>
       </div>
 
-      <!-- Film categories pills (restored) -->
       <div class="pills" id="filmPills"></div>
 
       <div class="searchRow">
         <input id="q" type="search" placeholder="ابحث بالاسم..." oninput="applySearch()" />
-        <button class="btn" onclick="refresh()">🔄 تحديث</button>
+        <button class="btn" onclick="init()">🔄 تحديث</button>
       </div>
+
+      <div id="debug" class="debug"></div>
     </div>
 
-    <div id="status" class="panel" style="display:none"></div>
     <div id="content" class="grid"></div>
   </div>
 
   <script>
     const CATALOG_URL = "/.netlify/functions/catalog";
-    const PLACEHOLDER = "https://via.placeholder.com/600x900?text=Poster";
+    const FOREIGN_URL  = "/.netlify/functions/foreignSeries"; // optional
+    const PLACEHOLDER  = "https://via.placeholder.com/600x900?text=Poster";
 
     let currentTab = "films";
-    let allItems = [];
-
+    let catalogItems = [];
     let films = [];
     let seriesMap = new Map();
 
-    let filmCategories = ["الكل"];   // auto built
-    let activeFilmCategory = "الكل"; // pill selected
+    // film categories (مثل: أفلام تونسية)
+    let filmCategories = ["الكل"];
+    let activeFilmCategory = "الكل";
 
-    function escapeHtml(str) {
-      return String(str || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-    function normalize(s){ return String(s || "").toLowerCase().trim(); }
+    // foreign series (optional)
+    let foreignSeries = []; // array of { title, image, episodes:[{title,url,sub?}] }
 
-    function showStatus(html){
-      const box = document.getElementById("status");
-      box.style.display = "block";
-      box.innerHTML = html;
+    function esc(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
-    function clearStatus(){
-      const box = document.getElementById("status");
-      box.style.display = "none";
-      box.innerHTML = "";
+    function norm(s){ return String(s ?? "").toLowerCase().trim(); }
+
+    function setDebug(text){
+      const el = document.getElementById("debug");
+      if (!text){
+        el.style.display = "none";
+        el.textContent = "";
+        return;
+      }
+      el.style.display = "block";
+      el.textContent = text;
     }
-    function setActiveTab(tab){
+
+    function setActiveTabUI(tab){
       document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
       const btn = document.getElementById(`tab-${tab}`);
       if (btn) btn.classList.add("active");
@@ -234,79 +254,117 @@
       return url + sep + "t=" + Date.now();
     }
 
-    async function loadCatalog(){
-      showStatus(`⏳ جاري تحميل البيانات...`);
+    // ---- Load catalog (films + series episodes) ----
+    async function fetchCatalog(){
       const res = await fetch(withBuster(CATALOG_URL));
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      if (!res.ok) throw new Error(`catalog HTTP ${res.status}`);
       const data = await res.json();
 
-      const items = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
-      allItems = items;
+      // handle multiple shapes safely
+      let items = [];
+      if (Array.isArray(data)) items = data;
+      else if (Array.isArray(data.items)) items = data.items;
+      else if (Array.isArray(data.data)) items = data.data;
+      else if (Array.isArray(data.movies) || Array.isArray(data.series)) {
+        items = []
+          .concat(Array.isArray(data.movies) ? data.movies : [])
+          .concat(Array.isArray(data.series) ? data.series : []);
+      } else {
+        // last resort: try to find an array inside object
+        for (const k of Object.keys(data || {})){
+          if (Array.isArray(data[k])) { items = data[k]; break; }
+        }
+      }
 
-      buildIndexes(items);
-      buildFilmPills();
-
-      showStatus(`✅ تم التحميل — العناصر: <b>${items.length}</b>`);
+      return items;
     }
 
-    function buildIndexes(items){
+    // Derive film category from any common field names
+    function getFilmCategory(it){
+      const c =
+        it.category ??
+        it.cat ??
+        it.section ??
+        it.group ??
+        it.typeCategory ??
+        "";
+      const val = String(c || "").trim();
+      return val || "أفلام";
+    }
+
+    // Build indexes from catalog
+    function buildFromCatalog(items){
+      catalogItems = items;
       films = [];
       seriesMap = new Map();
 
       const catSet = new Set();
 
       for (const it of items){
-        // FILM: title (and no seriesTitle)
-        if (it && it.title && !it.seriesTitle){
-          const category = (it.category || it.cat || "أفلام").toString().trim() || "أفلام";
+        if (!it || typeof it !== "object") continue;
 
-          films.push({
-            title: it.title,
-            url: it.url || it.m3u8 || it.src || "",
-            image: it.image || it.poster || PLACEHOLDER,
-            category
-          });
+        // FILM: has title, does NOT have seriesTitle
+        if (it.title && !it.seriesTitle){
+          const title = String(it.title).trim();
+          const url = it.url || it.m3u8 || it.src || it.link || "";
+          const image = it.image || it.poster || it.cover || PLACEHOLDER;
+          const category = getFilmCategory(it);
 
-          catSet.add(category);
+          if (title && url){
+            films.push({ title, url, image, category });
+            catSet.add(category);
+          }
           continue;
         }
 
-        // SERIES EP: seriesTitle + ep
-        if (it && it.seriesTitle){
-          const st = String(it.seriesTitle);
-          const epName = it.ep || it.episode || it.epTitle || "";
-          const epUrl = it.url || it.hlsUrl || it.m3u8 || it.src || "";
+        // SERIES EP: has seriesTitle
+        if (it.seriesTitle){
+          const st = String(it.seriesTitle).trim();
+          const epTitle = String(it.ep || it.episode || it.epTitle || "حلقة").trim();
+          const epUrl = it.url || it.m3u8 || it.src || it.hlsUrl || it.link || "";
+          const image = it.image || it.poster || it.cover || PLACEHOLDER;
+          const genre = it.genre || "";
+
+          if (!st || !epUrl) continue;
 
           if (!seriesMap.has(st)){
-            seriesMap.set(st, {
-              title: st,
-              image: it.image || it.poster || PLACEHOLDER,
-              genre: it.genre || "",
-              episodes: []
-            });
+            seriesMap.set(st, { title: st, image, genre, episodes: [] });
           }
-          const obj = seriesMap.get(st);
+          const s = seriesMap.get(st);
 
-          if (obj.image === PLACEHOLDER && (it.image || it.poster)) obj.image = it.image || it.poster;
-          if (it.genre && !obj.genre) obj.genre = it.genre;
+          if ((s.image === PLACEHOLDER) && image && image !== PLACEHOLDER) s.image = image;
+          if (!s.genre && genre) s.genre = genre;
 
-          if (epUrl){
-            obj.episodes.push({ title: epName || "حلقة", url: epUrl });
-          }
+          s.episodes.push({ title: epTitle, url: epUrl });
         }
       }
 
-      filmCategories = ["الكل", ...Array.from(catSet).sort((a,b)=>a.localeCompare(b, "ar"))];
-
-      // keep active category valid
+      filmCategories = ["الكل", ...Array.from(catSet).sort((a,b)=>a.localeCompare(b,"ar"))];
       if (!filmCategories.includes(activeFilmCategory)) activeFilmCategory = "الكل";
     }
 
-    function buildFilmPills(){
+    // ---- Optional: foreign series endpoint ----
+    async function fetchForeign(){
+      try{
+        const res = await fetch(withBuster(FOREIGN_URL));
+        if (!res.ok) throw new Error(`foreign HTTP ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("foreign response is not an array");
+        foreignSeries = data;
+      }catch(e){
+        foreignSeries = [];
+        // don’t break the whole page
+        setDebug((document.getElementById("debug").textContent || "") +
+          `\n[foreign] ${e.message}`);
+      }
+    }
+
+    // ---- UI: pills ----
+    function renderFilmPills(){
       const wrap = document.getElementById("filmPills");
       wrap.innerHTML = "";
 
-      // show pills only in Films tab
+      // show pills only for Films tab
       wrap.style.display = (currentTab === "films") ? "flex" : "none";
 
       filmCategories.forEach(cat => {
@@ -315,123 +373,99 @@
         b.textContent = cat;
         b.onclick = () => {
           activeFilmCategory = cat;
-          buildFilmPills();
+          renderFilmPills();
           applySearch();
         };
         wrap.appendChild(b);
       });
     }
 
-    function setTab(tab){
-      currentTab = tab;
-      document.getElementById("q").value = "";
-      setActiveTab(tab);
-      buildFilmPills();
-      applySearch();
-    }
-
-    function refresh(){ init(); }
-
-    function applySearch(){
-      const q = normalize(document.getElementById("q").value);
-
-      if (currentTab === "films"){
-        let list = films;
-
-        // filter by category pill
-        if (activeFilmCategory !== "الكل"){
-          list = list.filter(x => (x.category || "أفلام") === activeFilmCategory);
-        }
-
-        // search within filtered list
-        if (q){
-          list = list.filter(x => normalize(x.title).includes(q));
-        }
-
-        return renderFilms(list);
-      }
-
-      if (currentTab === "series"){
-        let arr = Array.from(seriesMap.values());
-
-        if (q){
-          arr = arr.filter(s => normalize(s.title).includes(q) || normalize(s.genre).includes(q));
-        }
-
-        return renderSeriesCards(arr);
-      }
-    }
-
+    // ---- Render films grid ----
     function renderFilms(list){
       const el = document.getElementById("content");
       el.className = "grid";
       el.innerHTML = "";
 
       if (!list.length){
-        el.innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">لا توجد أفلام في هذا القسم.</div></div>`;
+        el.innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">لا توجد أفلام هنا.</div></div>`;
         return;
       }
 
       list.forEach(item => {
-        const title = item.title || "بدون عنوان";
-        const url = item.url || "";
-        const image = item.image || PLACEHOLDER;
-        const category = item.category || "أفلام";
-
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
-          <div class="poster"><img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}"></div>
+          <div class="poster"><img loading="lazy" src="${esc(item.image)}" alt="${esc(item.title)}"></div>
           <div class="meta">
-            <h3>${escapeHtml(title)}</h3>
-            <div class="badge">🎬 ${escapeHtml(category)}</div>
-            <button class="btn primary" onclick="openFilm('${encodeURIComponent(title)}','${encodeURIComponent(url)}')">مشاهدة</button>
+            <h3>${esc(item.title)}</h3>
+            <div class="badge">🎬 ${esc(item.category)}</div>
+            <button class="btn primary" onclick="openWatch('film','${encodeURIComponent(item.title)}','${encodeURIComponent(item.url)}')">مشاهدة</button>
           </div>
         `;
         el.appendChild(card);
       });
     }
 
-    function renderSeriesCards(list){
+    // ---- Render series cards ----
+    function renderSeriesCards(arr){
       const el = document.getElementById("content");
       el.className = "grid";
       el.innerHTML = "";
 
-      if (!list.length){
+      if (!arr.length){
         el.innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">لا توجد مسلسلات.</div></div>`;
         return;
       }
 
-      list.forEach(series => {
-        const title = series.title || "بدون عنوان";
-        const image = series.image || PLACEHOLDER;
-        const genre = series.genre || "";
-
+      arr.forEach(series => {
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
-          <div class="poster"><img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}"></div>
+          <div class="poster"><img loading="lazy" src="${esc(series.image)}" alt="${esc(series.title)}"></div>
           <div class="meta">
-            <h3>${escapeHtml(title)}</h3>
-            <div class="badge">📺 مسلسل${genre ? " • " + escapeHtml(genre) : ""}</div>
+            <h3>${esc(series.title)}</h3>
+            <div class="badge">📺 مسلسل${series.genre ? " • " + esc(series.genre) : ""}</div>
             <div class="small">${series.episodes.length} حلقة</div>
-            <button class="btn primary" onclick="openSeries('${encodeURIComponent(title)}')">عرض الحلقات</button>
+            <button class="btn primary" onclick="openSeries('${encodeURIComponent(series.title)}')">عرض الحلقات</button>
           </div>
         `;
         el.appendChild(card);
       });
     }
 
-    function openFilm(titleEnc, urlEnc){
-      const title = decodeURIComponent(titleEnc);
-      const url = decodeURIComponent(urlEnc);
-      const params = new URLSearchParams();
-      params.set("type", "film");
-      params.set("title", title);
-      params.set("src", url);
-      window.location.href = "/watch.html?" + params.toString();
+    // ---- Render foreign series cards ----
+    function renderForeignCards(arr){
+      const el = document.getElementById("content");
+      el.className = "grid";
+      el.innerHTML = "";
+
+      if (!arr.length){
+        el.innerHTML = `<div class="panel" style="grid-column:1/-1">
+          <div class="small">
+            لا توجد مسلسلات أجنبية أو لم يتم إعداد endpoint الخاص بها.<br>
+            تأكد أن هذا الرابط يعمل: <span style="opacity:.85">/.netlify/functions/foreignSeries</span>
+          </div>
+        </div>`;
+        return;
+      }
+
+      arr.forEach(series => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="poster"><img loading="lazy" src="${esc(series.image || PLACEHOLDER)}" alt="${esc(series.title)}"></div>
+          <div class="meta">
+            <h3>${esc(series.title)}</h3>
+            <div class="badge">🌍 مسلسل أجنبي</div>
+            <div class="small">${(series.episodes||[]).length} حلقة</div>
+            <button class="btn primary" onclick="openForeignSeries('${encodeURIComponent(series.title)}')">عرض الحلقات</button>
+          </div>
+        `;
+        el.appendChild(card);
+      });
     }
 
+    // ---- Open series episodes view ----
     function openSeries(seriesTitleEnc){
       const title = decodeURIComponent(seriesTitleEnc);
       const series = seriesMap.get(title);
@@ -444,8 +478,8 @@
           <div class="panelHeader">
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <button class="btn" onclick="applySearch()">⬅ رجوع</button>
-              <h3>${escapeHtml(series.title)}</h3>
-              ${series.genre ? `<span class="badge">${escapeHtml(series.genre)}</span>` : ""}
+              <h3>${esc(series.title)}</h3>
+              ${series.genre ? `<span class="badge">${esc(series.genre)}</span>` : ""}
             </div>
             <div class="small">${series.episodes.length} حلقة</div>
           </div>
@@ -457,29 +491,150 @@
       series.episodes.forEach((ep, idx) => {
         const btn = document.createElement("button");
         btn.className = "epBtn";
-        btn.innerHTML = `<span>${escapeHtml(ep.title || `حلقة ${idx+1}`)}</span><span class="small">▶</span>`;
+        btn.innerHTML = `<span>${esc(ep.title || `حلقة ${idx+1}`)}</span><span class="small">▶</span>`;
+        btn.onclick = () => openWatch("series-ep", encodeURIComponent(series.title), encodeURIComponent(ep.url), encodeURIComponent(ep.title || `حلقة ${idx+1}`));
+        eps.appendChild(btn);
+      });
+    }
+
+    // ---- Foreign episodes (optional) ----
+    function openForeignSeries(seriesTitleEnc){
+      const title = decodeURIComponent(seriesTitleEnc);
+      const series = (foreignSeries || []).find(s => s.title === title);
+      if (!series) return;
+
+      const el = document.getElementById("content");
+      el.className = "";
+      el.innerHTML = `
+        <div class="panel" style="width:100%">
+          <div class="panelHeader">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn" onclick="applySearch()">⬅ رجوع</button>
+              <h3>${esc(series.title)}</h3>
+              <span class="badge">🌍 أجنبي</span>
+            </div>
+            <div class="small">${(series.episodes||[]).length} حلقة</div>
+          </div>
+          <div class="episodes" id="foreignEpisodes"></div>
+        </div>
+      `;
+
+      const eps = document.getElementById("foreignEpisodes");
+      (series.episodes || []).forEach((ep, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "epBtn";
+        btn.innerHTML = `<span>${esc(ep.title || `حلقة ${idx+1}`)}</span><span class="small">▶</span>`;
         btn.onclick = () => {
+          // If you use m3u8 + external vtt, watch.html should handle &sub=...
+          // Here we pass src + optional sub
+          const src = encodeURIComponent(ep.url || "");
+          const sub = encodeURIComponent(ep.sub || "");
           const params = new URLSearchParams();
-          params.set("type", "series-ep");
+          params.set("type", "foreign-ep");
           params.set("series", series.title);
           params.set("ep", ep.title || `حلقة ${idx+1}`);
-          params.set("src", ep.url);
+          params.set("src", decodeURIComponent(src));
+          if (ep.sub) params.set("sub", decodeURIComponent(sub));
           window.location.href = "/watch.html?" + params.toString();
         };
         eps.appendChild(btn);
       });
     }
 
+    // ---- Go to watch ----
+    function openWatch(type, titleEnc, srcEnc, epEnc){
+      const params = new URLSearchParams();
+      params.set("type", type);
+
+      const src = decodeURIComponent(srcEnc || "");
+      params.set("src", src);
+
+      if (type === "film"){
+        params.set("title", decodeURIComponent(titleEnc || ""));
+      } else {
+        params.set("series", decodeURIComponent(titleEnc || ""));
+        params.set("ep", decodeURIComponent(epEnc || ""));
+      }
+
+      window.location.href = "/watch.html?" + params.toString();
+    }
+
+    // ---- Filtering/search per tab ----
+    function applySearch(){
+      const q = norm(document.getElementById("q").value);
+
+      if (currentTab === "films"){
+        let list = films.slice();
+
+        if (activeFilmCategory !== "الكل"){
+          list = list.filter(x => x.category === activeFilmCategory);
+        }
+        if (q){
+          list = list.filter(x => norm(x.title).includes(q) || norm(x.category).includes(q));
+        }
+        renderFilms(list);
+        return;
+      }
+
+      if (currentTab === "series"){
+        let arr = Array.from(seriesMap.values());
+        if (q){
+          arr = arr.filter(s => norm(s.title).includes(q) || norm(s.genre).includes(q));
+        }
+        renderSeriesCards(arr);
+        return;
+      }
+
+      if (currentTab === "foreign"){
+        let arr = foreignSeries.slice();
+        if (q){
+          arr = arr.filter(s => norm(s.title).includes(q));
+        }
+        renderForeignCards(arr);
+        return;
+      }
+    }
+
+    function setTab(tab){
+      currentTab = tab;
+      setActiveTabUI(tab);
+      document.getElementById("q").value = "";
+      renderFilmPills();
+      applySearch();
+    }
+
+    // ---- Init ----
     async function init(){
-      clearStatus();
+      setDebug("");
+
       try{
-        await loadCatalog();
-        setActiveTab(currentTab);
-        buildFilmPills();
+        const items = await fetchCatalog();
+        buildFromCatalog(items);
+
+        // Optional foreign fetch (won’t break page)
+        await fetchForeign();
+
+        setActiveTabUI(currentTab);
+        renderFilmPills();
+
+        // quick debug info (useful when "nothing loads")
+        setDebug(
+          `loaded catalog items: ${catalogItems.length}\n` +
+          `films: ${films.length}\n` +
+          `series titles: ${seriesMap.size}\n` +
+          `film categories: ${filmCategories.join(" | ")}\n` +
+          `foreign series: ${foreignSeries.length}\n` +
+          `catalog endpoint: ${CATALOG_URL}`
+        );
+
         applySearch();
       }catch(e){
-        showStatus(`<b style="color:#ef4444">⚠ خطأ</b><div class="small">فشل تحميل catalog: ${escapeHtml(e.message || String(e))}</div>`);
-        document.getElementById("content").innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">تعذر تحميل المحتوى.</div></div>`;
+        setDebug(`ERROR: ${e.message}\nCheck Network tab and open:\n${location.origin}${CATALOG_URL}`);
+        document.getElementById("content").innerHTML =
+          `<div class="panel" style="grid-column:1/-1">
+            <div style="color:#ef4444;font-weight:700">⚠ فشل تحميل المحتوى</div>
+            <div class="small">تأكد أن هذا الرابط يعمل: <b>/.netlify/functions/catalog</b></div>
+           </div>`;
       }
     }
 
