@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>المكتبة | أفلام ومسلسلات</title>
-  <meta name="description" content="مكتبة أفلام ومسلسلات بواجهة عربية داكنة" />
+  <title>المكتبة</title>
+
   <style>
     :root{
       --bg:#0b0f17;
@@ -14,11 +14,9 @@
       --muted:#a8b2d1;
       --border:rgba(255,255,255,.08);
       --accent:#7c5cff;
-      --accent2:#22c55e;
       --danger:#ef4444;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
       margin:0;
       background: radial-gradient(1200px 700px at 80% 10%, rgba(124,92,255,.18), transparent 60%),
@@ -28,7 +26,6 @@
       font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial;
       direction: rtl;
     }
-    a{color:inherit;text-decoration:none}
     .container{max-width:1150px;margin:0 auto;padding:22px}
     .nav{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
@@ -55,8 +52,6 @@
     }
     .btn:hover{border-color: rgba(124,92,255,.45)}
     .btn.primary{background:rgba(124,92,255,.22);border-color: rgba(124,92,255,.35)}
-    .btn.ghost{background:transparent}
-
     .hero{
       margin-top:18px;
       padding:18px;border-radius:18px;
@@ -65,8 +60,7 @@
     }
     .hero h2{margin:0 0 8px;font-size:22px}
     .hero p{margin:0;color:var(--muted);line-height:1.7}
-
-    .tabs{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .tabs{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
     .tab{
       padding:10px 12px;border-radius:12px;
       border:1px solid var(--border);
@@ -76,7 +70,6 @@
       user-select:none;
     }
     .tab.active{border-color: rgba(124,92,255,.45);background: rgba(124,92,255,.14)}
-
     .searchRow{
       margin-top:12px;
       display:flex;gap:10px;flex-wrap:wrap;
@@ -90,7 +83,6 @@
       outline:none;
     }
     .searchRow input::placeholder{color:rgba(168,178,209,.7)}
-
     .grid{
       margin-top:16px;
       display:grid;gap:14px;
@@ -102,7 +94,6 @@
       border-radius:16px;overflow:hidden;
       box-shadow: 0 14px 50px rgba(0,0,0,.28);
       display:flex;flex-direction:column;
-      min-height: 100%;
     }
     .poster{aspect-ratio: 2/3;background: rgba(255,255,255,.05)}
     .poster img{width:100%;height:100%;object-fit:cover;display:block}
@@ -116,7 +107,6 @@
       padding:6px 8px;border-radius:999px;
       width:fit-content;
     }
-
     .panel{
       margin-top:16px;
       border:1px solid var(--border);
@@ -129,10 +119,7 @@
       margin-bottom:10px;
     }
     .panelHeader h3{margin:0;font-size:16px}
-    .episodes{
-      display:flex;flex-direction:column;gap:10px;
-      margin-top:10px;
-    }
+    .episodes{display:flex;flex-direction:column;gap:10px;margin-top:10px}
     .epBtn{
       width:100%;
       display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -144,7 +131,14 @@
       text-align:right;
     }
     .epBtn:hover{border-color: rgba(124,92,255,.45)}
-    .footerNote{margin-top:18px;color:rgba(168,178,209,.75);font-size:12px}
+    .errorBox{
+      border:1px solid rgba(239,68,68,.35);
+      background: rgba(239,68,68,.08);
+      border-radius:16px;
+      padding:14px;
+      margin-top:16px;
+    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   </style>
 </head>
 <body>
@@ -154,23 +148,17 @@
         <div class="logo"></div>
         <div>
           <h1>مكتبتي</h1>
-          <p>أفلام ومسلسلات بواجهة عربية</p>
+          <p>أفلام ومسلسلات</p>
         </div>
       </div>
-
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <!-- Optional: link to your Telegram bot -->
-        <a class="btn" id="botLink" href="#" target="_blank" rel="noopener">🤖 البوت</a>
         <a class="btn primary" href="/index.html">تسجيل الدخول</a>
       </div>
     </div>
 
     <div class="hero">
       <h2>اختر شيئًا لتشاهده 🍿</h2>
-      <p>
-        تصفّح <b>الأفلام</b> و<b>المسلسلات</b> و<b>المسلسلات الأجنبية</b>.
-        استخدم البحث للوصول بسرعة لأي عنوان.
-      </p>
+      <p>الأفلام • المسلسلات • المسلسلات الأجنبية</p>
 
       <div class="tabs">
         <button class="tab active" id="tab-films" onclick="setTab('films')">الأفلام</button>
@@ -184,23 +172,36 @@
       </div>
     </div>
 
-    <!-- Main content -->
+    <div id="msg"></div>
     <div id="content" class="grid"></div>
-
-    <div class="footerNote">
-      ملاحظة: إذا كان رابط m3u8 لا يعمل، غالباً المشكلة من المصدر (CORS/Token/Geo). جرّب مصدر آخر.
-    </div>
   </div>
 
   <script>
-    // ====== CONFIG ======
-    // Put your bot username here (without @) if you want the "Bot" button to work.
-    const TELEGRAM_BOT_USERNAME = ""; // e.g. "YourBotName"
-
-    const API = {
-      films: "/.netlify/functions/catalog",
-      series: "/.netlify/functions/series",
-      foreign: "/.netlify/functions/foreignSeries"
+    // ==========================================================
+    // AUTO-DETECT endpoints (so you DON'T have to rename anything)
+    // ==========================================================
+    const ENDPOINT_CANDIDATES = {
+      films: [
+        "/.netlify/functions/catalog",
+        "/.netlify/functions/catalog.js",
+        "/.netlify/functions/movies",
+        "/.netlify/functions/films",
+        "/api/catalog",
+        "/api/movies"
+      ],
+      series: [
+        "/.netlify/functions/series",
+        "/.netlify/functions/series.js",
+        "/.netlify/functions/tv",
+        "/api/series"
+      ],
+      foreign: [
+        "/.netlify/functions/foreignSeries",
+        "/.netlify/functions/foreign-series",
+        "/.netlify/functions/foreignSeries.js",
+        "/.netlify/functions/foreign",
+        "/api/foreignSeries"
+      ],
     };
 
     // ====== STATE ======
@@ -208,31 +209,9 @@
     let filmsCache = [];
     let seriesCache = [];
     let foreignCache = [];
+    let resolvedEndpoint = { films:null, series:null, foreign:null };
 
-    // ====== INIT ======
-    (function init(){
-      const botLink = document.getElementById("botLink");
-      if (TELEGRAM_BOT_USERNAME) {
-        botLink.href = "https://t.me/" + TELEGRAM_BOT_USERNAME;
-      } else {
-        botLink.href = "#";
-        botLink.onclick = (e) => {
-          e.preventDefault();
-          alert("ضع اسم البوت في browse.html داخل TELEGRAM_BOT_USERNAME");
-        };
-      }
-
-      // Load default tab
-      loadFilms();
-    })();
-
-    // ====== UI helpers ======
-    function setActiveTab(tab){
-      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-      const btn = document.getElementById(`tab-${tab}`);
-      if (btn) btn.classList.add("active");
-    }
-
+    // ====== helpers ======
     function escapeHtml(str) {
       return String(str || "")
         .replaceAll("&", "&amp;")
@@ -241,50 +220,171 @@
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
+    function normalize(s){ return String(s || "").toLowerCase().trim(); }
+    function getQuery(){ return normalize(document.getElementById("q").value); }
 
-    function normalize(s){
-      return String(s || "").toLowerCase().trim();
+    function setActiveTab(tab){
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      const btn = document.getElementById(`tab-${tab}`);
+      if (btn) btn.classList.add("active");
     }
 
-    function getQuery(){
-      return normalize(document.getElementById("q").value);
+    function setMsg(html){
+      document.getElementById("msg").innerHTML = html || "";
     }
 
-    function showLoading(msg){
-      const el = document.getElementById("content");
-      el.className = "";
-      el.innerHTML = `
-        <div class="panel" style="width:100%">
-          <div class="small">${escapeHtml(msg)}</div>
+    function showLoading(text){
+      setMsg(`<div class="panel"><div class="small">${escapeHtml(text || "Loading...")}</div></div>`);
+    }
+
+    function showError(title, details){
+      setMsg(`
+        <div class="errorBox">
+          <div><b>⚠ ${escapeHtml(title)}</b></div>
+          <div class="small" style="margin-top:6px">${escapeHtml(details || "")}</div>
+          <div class="small" style="margin-top:10px">
+            افتح DevTools → Network وشوف طلبات <span class="mono">/.netlify/functions/...</span>
+          </div>
         </div>
-      `;
+      `);
     }
 
-    function showGrid(){
-      const el = document.getElementById("content");
-      el.className = "grid";
+    async function fetchFirstWorking(urls){
+      const tried = [];
+      for (const url of urls){
+        try{
+          tried.push(url);
+          const res = await fetch(url + `?t=${Date.now()}`);
+          if (!res.ok) continue;
+
+          const ct = (res.headers.get("content-type") || "").toLowerCase();
+          if (!ct.includes("application/json")) {
+            // still try parse as json (some setups miss header)
+          }
+          const data = await res.json();
+          return { url, data, tried };
+        }catch(e){
+          // try next
+        }
+      }
+      return { url:null, data:null, tried };
+    }
+
+    function extractArray(payload, kind){
+      // Accept: [] or {items:[]} or {films:[]} or {series:[]} etc
+      if (Array.isArray(payload)) return payload;
+
+      if (payload && typeof payload === "object") {
+        if (Array.isArray(payload.items)) return payload.items;
+        if (kind === "films" && Array.isArray(payload.films)) return payload.films;
+        if (kind === "films" && Array.isArray(payload.movies)) return payload.movies;
+
+        if (kind === "series" && Array.isArray(payload.series)) return payload.series;
+        if (kind === "series" && Array.isArray(payload.items)) return payload.items;
+
+        if (kind === "foreign" && Array.isArray(payload.series)) return payload.series;
+        if (kind === "foreign" && Array.isArray(payload.foreign)) return payload.foreign;
+        if (kind === "foreign" && Array.isArray(payload.items)) return payload.items;
+      }
+      return [];
+    }
+
+    // ====== LOADERS ======
+    async function loadFilms(){
+      setActiveTab("films");
+      showLoading("... جاري تحميل الأفلام");
+      const r = await fetchFirstWorking(ENDPOINT_CANDIDATES.films);
+      if (!r.url){
+        showError("تعذر تحميل الأفلام", "لم أجد Endpoint صالح. جرّبت:\n" + r.tried.join("\n"));
+        filmsCache = [];
+        renderFilms([]);
+        return;
+      }
+      resolvedEndpoint.films = r.url;
+      const arr = extractArray(r.data, "films");
+      filmsCache = (arr || []).map(x => ({
+        title: x.title ?? x.name ?? "",
+        url: x.url ?? x.m3u8 ?? x.src ?? "",
+        image: x.image ?? x.poster ?? ""
+      })).filter(x => x.title && x.url);
+      setMsg(`<div class="panel"><div class="small">✅ الأفلام من: <span class="mono">${escapeHtml(r.url)}</span> — العدد: ${filmsCache.length}</div></div>`);
+      renderFilms(filmsCache);
+    }
+
+    async function loadSeries(){
+      setActiveTab("series");
+      showLoading("... جاري تحميل المسلسلات");
+      const r = await fetchFirstWorking(ENDPOINT_CANDIDATES.series);
+      if (!r.url){
+        showError("تعذر تحميل المسلسلات", "لم أجد Endpoint صالح. جرّبت:\n" + r.tried.join("\n"));
+        seriesCache = [];
+        renderSeriesList([]);
+        return;
+      }
+      resolvedEndpoint.series = r.url;
+      const arr = extractArray(r.data, "series");
+      // Expected shape: [{title,image,genre,episodes:[{title,hlsUrl/url}]}]
+      seriesCache = (arr || []).map(s => ({
+        title: s.title ?? s.name ?? "",
+        image: s.image ?? s.poster ?? "",
+        genre: s.genre ?? "",
+        episodes: Array.isArray(s.episodes) ? s.episodes.map(ep => ({
+          title: ep.title ?? ep.name ?? ep.episode ?? "",
+          hlsUrl: ep.hlsUrl ?? ep.url ?? ep.src ?? ""
+        })).filter(ep => ep.hlsUrl) : []
+      })).filter(s => s.title && s.episodes.length);
+      setMsg(`<div class="panel"><div class="small">✅ المسلسلات من: <span class="mono">${escapeHtml(r.url)}</span> — العدد: ${seriesCache.length}</div></div>`);
+      renderSeriesList(seriesCache);
+    }
+
+    async function loadForeignSeries(){
+      setActiveTab("foreign");
+      showLoading("... جاري تحميل المسلسلات الأجنبية");
+      const r = await fetchFirstWorking(ENDPOINT_CANDIDATES.foreign);
+      if (!r.url){
+        showError("تعذر تحميل المسلسلات الأجنبية", "لم أجد Endpoint صالح. جرّبت:\n" + r.tried.join("\n"));
+        foreignCache = [];
+        renderForeignSeriesList([]);
+        return;
+      }
+      resolvedEndpoint.foreign = r.url;
+      const arr = extractArray(r.data, "foreign");
+      // Expected shape: [{title,image,episodes:[{title,hlsUrl,subs:[{label,lang,url}]}]}]
+      foreignCache = (arr || []).map(s => ({
+        title: s.title ?? s.name ?? "",
+        image: s.image ?? s.poster ?? "",
+        episodes: Array.isArray(s.episodes) ? s.episodes.map(ep => ({
+          title: ep.title ?? ep.name ?? ep.episode ?? "",
+          hlsUrl: ep.hlsUrl ?? ep.url ?? ep.src ?? "",
+          subs: Array.isArray(ep.subs) ? ep.subs.map(t => ({
+            label: t.label ?? t.name ?? "Sub",
+            lang: t.lang ?? "ar",
+            url: t.url ?? ""
+          })).filter(t => t.url) : []
+        })).filter(ep => ep.hlsUrl) : []
+      })).filter(s => s.title && s.episodes.length);
+
+      setMsg(`<div class="panel"><div class="small">✅ المسلسلات الأجنبية من: <span class="mono">${escapeHtml(r.url)}</span> — العدد: ${foreignCache.length}</div></div>`);
+      renderForeignSeriesList(foreignCache);
     }
 
     // ====== TAB CONTROL ======
     function setTab(tab){
       currentTab = tab;
-      setActiveTab(tab);
       document.getElementById("q").value = "";
-
       if (tab === "films") return loadFilms();
       if (tab === "series") return loadSeries();
       if (tab === "foreign") return loadForeignSeries();
     }
 
     function refreshCurrent(){
-      if (currentTab === "films") return loadFilms(true);
-      if (currentTab === "series") return loadSeries(true);
-      if (currentTab === "foreign") return loadForeignSeries(true);
+      if (currentTab === "films") return loadFilms();
+      if (currentTab === "series") return loadSeries();
+      if (currentTab === "foreign") return loadForeignSeries();
     }
 
     function applySearch(){
       const q = getQuery();
-
       if (currentTab === "films"){
         const filtered = q ? filmsCache.filter(x => normalize(x.title).includes(q)) : filmsCache;
         return renderFilms(filtered);
@@ -299,88 +399,29 @@
       }
     }
 
-    // ====== LOADERS ======
-    async function loadFilms(force){
-      setActiveTab("films");
-      showLoading("... جاري تحميل الأفلام");
-      try{
-        const res = await fetch(API.films + (force ? `?t=${Date.now()}` : ""));
-        const data = await res.json();
-        filmsCache = Array.isArray(data) ? data : [];
-        renderFilms(filmsCache);
-      } catch(e){
-        showError("تعذّر تحميل الأفلام. تأكد من Function catalog.js");
-      }
-    }
-
-    async function loadSeries(force){
-      setActiveTab("series");
-      showLoading("... جاري تحميل المسلسلات");
-      try{
-        const res = await fetch(API.series + (force ? `?t=${Date.now()}` : ""));
-        const data = await res.json();
-        seriesCache = Array.isArray(data) ? data : [];
-        renderSeriesList(seriesCache);
-      } catch(e){
-        showError("تعذّر تحميل المسلسلات. تأكد من Function series.js");
-      }
-    }
-
-    async function loadForeignSeries(force){
-      setActiveTab("foreign");
-      showLoading("... جاري تحميل المسلسلات الأجنبية");
-      try{
-        const res = await fetch(API.foreign + (force ? `?t=${Date.now()}` : ""));
-        const data = await res.json();
-        foreignCache = Array.isArray(data) ? data : [];
-        renderForeignSeriesList(foreignCache);
-      } catch(e){
-        showError("تعذّر تحميل المسلسلات الأجنبية. تأكد من Function foreignSeries.js");
-      }
-    }
-
-    function showError(msg){
-      const el = document.getElementById("content");
-      el.className = "";
-      el.innerHTML = `
-        <div class="panel" style="width:100%">
-          <div class="small" style="color:#ffb4b4">⚠ ${escapeHtml(msg)}</div>
-          <div class="small">افتح Console لمعرفة التفاصيل.</div>
-        </div>
-      `;
-      console.error(msg);
-    }
-
     // ====== RENDER FILMS ======
     function renderFilms(list){
-      showGrid();
       const el = document.getElementById("content");
+      el.className = "grid";
       el.innerHTML = "";
-
       if (!list.length){
-        el.innerHTML = `<div class="panel" style="width:100%"><div class="small">لا توجد نتائج.</div></div>`;
+        el.innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">لا توجد أفلام.</div></div>`;
         return;
       }
-
       list.forEach(item => {
         const title = item.title || "بدون عنوان";
         const url = item.url || "";
         const image = item.image || "https://via.placeholder.com/600x900?text=Poster";
-
         const card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `
-          <div class="poster">
-            <img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">
-          </div>
+          <div class="poster"><img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}"></div>
           <div class="meta">
             <h3>${escapeHtml(title)}</h3>
             <div class="badge">🎬 فيلم</div>
             <button class="btn primary" onclick="openFilm('${encodeURIComponent(title)}','${encodeURIComponent(url)}')">مشاهدة</button>
           </div>
         `;
-
         el.appendChild(card);
       });
     }
@@ -395,35 +436,28 @@
       window.location.href = "/watch.html?" + params.toString();
     }
 
-    // ====== RENDER ARABIC SERIES ======
+    // ====== RENDER SERIES LIST ======
     function renderSeriesList(list){
-      showGrid();
       const el = document.getElementById("content");
+      el.className = "grid";
       el.innerHTML = "";
-
       if (!list.length){
-        el.innerHTML = `<div class="panel" style="width:100%"><div class="small">لا توجد نتائج.</div></div>`;
+        el.innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">لا توجد مسلسلات.</div></div>`;
         return;
       }
 
-      // group by genre (optional)
-      // we will just show badges if genre exists
       list.forEach(series => {
         const title = series.title || "بدون عنوان";
         const image = series.image || "https://via.placeholder.com/600x900?text=Poster";
         const genre = series.genre || "";
-
         const card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `
-          <div class="poster">
-            <img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">
-          </div>
+          <div class="poster"><img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}"></div>
           <div class="meta">
             <h3>${escapeHtml(title)}</h3>
             <div class="badge">📺 مسلسل${genre ? " • " + escapeHtml(genre) : ""}</div>
-            <div class="small">${(series.episodes || []).length} حلقة</div>
+            <div class="small">${series.episodes.length} حلقة</div>
             <button class="btn primary" onclick="openSeries('${encodeURIComponent(title)}')">عرض الحلقات</button>
           </div>
         `;
@@ -442,18 +476,18 @@
         <div class="panel" style="width:100%">
           <div class="panelHeader">
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-              <button class="btn ghost" onclick="renderSeriesList(seriesCache)">⬅ رجوع</button>
+              <button class="btn" onclick="renderSeriesList(seriesCache)">⬅ رجوع</button>
               <h3>${escapeHtml(series.title)}</h3>
               ${series.genre ? `<span class="badge">${escapeHtml(series.genre)}</span>` : ""}
             </div>
-            <div class="small">${(series.episodes || []).length} حلقة</div>
+            <div class="small">${series.episodes.length} حلقة</div>
           </div>
           <div class="episodes" id="episodes"></div>
         </div>
       `;
 
       const eps = document.getElementById("episodes");
-      (series.episodes || []).forEach((ep, idx) => {
+      series.episodes.forEach((ep, idx) => {
         const btn = document.createElement("button");
         btn.className = "epBtn";
         btn.innerHTML = `<span>${escapeHtml(ep.title || `Episode ${idx+1}`)}</span><span class="small">▶</span>`;
@@ -469,32 +503,27 @@
       });
     }
 
-    // ====== RENDER FOREIGN SERIES (HLS + VTT) ======
+    // ====== RENDER FOREIGN SERIES LIST ======
     function renderForeignSeriesList(list){
-      showGrid();
       const el = document.getElementById("content");
+      el.className = "grid";
       el.innerHTML = "";
-
       if (!list.length){
-        el.innerHTML = `<div class="panel" style="width:100%"><div class="small">لا توجد نتائج.</div></div>`;
+        el.innerHTML = `<div class="panel" style="grid-column:1/-1"><div class="small">لا توجد مسلسلات أجنبية.</div></div>`;
         return;
       }
 
       list.forEach(series => {
         const title = series.title || "بدون عنوان";
         const image = series.image || "https://via.placeholder.com/600x900?text=Poster";
-
         const card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `
-          <div class="poster">
-            <img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}">
-          </div>
+          <div class="poster"><img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(title)}"></div>
           <div class="meta">
             <h3>${escapeHtml(title)}</h3>
             <div class="badge">🌍 مسلسل أجنبي</div>
-            <div class="small">${(series.episodes || []).length} حلقة</div>
+            <div class="small">${series.episodes.length} حلقة</div>
             <button class="btn primary" onclick="openForeignSeries('${encodeURIComponent(title)}')">عرض الحلقات</button>
           </div>
         `;
@@ -513,29 +542,27 @@
         <div class="panel" style="width:100%">
           <div class="panelHeader">
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-              <button class="btn ghost" onclick="renderForeignSeriesList(foreignCache)">⬅ رجوع</button>
+              <button class="btn" onclick="renderForeignSeriesList(foreignCache)">⬅ رجوع</button>
               <h3>${escapeHtml(series.title)}</h3>
               <span class="badge">🌍</span>
             </div>
-            <div class="small">${(series.episodes || []).length} حلقة</div>
+            <div class="small">${series.episodes.length} حلقة</div>
           </div>
           <div class="episodes" id="episodes"></div>
         </div>
       `;
 
       const eps = document.getElementById("episodes");
-      (series.episodes || []).forEach((ep, idx) => {
+      series.episodes.forEach((ep, idx) => {
         const btn = document.createElement("button");
         btn.className = "epBtn";
-
         const subsCount = (ep.subs || []).length;
         const subsTxt = subsCount ? ` • ترجمات: ${subsCount}` : "";
-
         btn.innerHTML = `<span>${escapeHtml(ep.title || `Episode ${idx+1}`)}<span class="small">${escapeHtml(subsTxt)}</span></span><span class="small">▶</span>`;
-
         btn.onclick = () => {
-          // send the whole episode object encoded safely
-          const payload = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(ep)))));
+          // Keep URL small: send only what watch.html needs
+          const payloadObj = { title: ep.title || `Episode ${idx+1}`, hlsUrl: ep.hlsUrl, subs: ep.subs || [] };
+          const payload = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payloadObj)))));
           const params = new URLSearchParams();
           params.set("type", "foreign-ep");
           params.set("series", series.title);
@@ -543,10 +570,12 @@
           params.set("payload", payload);
           window.location.href = "/watch.html?" + params.toString();
         };
-
         eps.appendChild(btn);
       });
     }
+
+    // ====== START ======
+    loadFilms();
   </script>
 </body>
 </html>
