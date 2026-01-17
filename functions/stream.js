@@ -15,17 +15,37 @@ function cleanParts(line) {
   return line.split("|").map(p => p.trim()).filter(p => p.length > 0);
 }
 
+function isBunnyEmbed(url) {
+  const u = String(url || "").toLowerCase();
+  return u.includes("player.mediadelivery.net/embed/");
+}
+
+function detectKind(url) {
+  const u = String(url || "").toLowerCase();
+  if (isBunnyEmbed(u)) return "bunny_embed";
+  if (u.includes(".m3u8")) return "hls";
+  if (u.includes(".mp4")) return "mp4";
+  // fallback: many sources redirect to HLS
+  return "hls";
+}
+
 function parseMovies(text) {
+  // Movie format:
+  // Title | VIDEO_URL (m3u8 OR mp4 OR bunny embed) | Image_URL (optional) | Category (optional)
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
   for (const line of lines) {
     const parts = cleanParts(line);
     if (parts.length < 2) continue;
+
     const title = parts[0];
     const url = parts[1];
     const image = parts[2] || "";
+    const category = parts[3] || "أفلام";
+
     if (!title || !url) continue;
-    items.push({ id: makeMovieId(title, url), title, url, image });
+
+    items.push({ id: makeMovieId(title, url), title, url, image, category });
   }
   return items;
 }
@@ -36,6 +56,8 @@ function extractEpisodeNumber(epLabel) {
 }
 
 function parseEpisodes(text) {
+  // Series format:
+  // Series Name | Episode 17 | VIDEO_URL | SeriesImageURL | Genre
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const eps = [];
   for (const line of lines) {
@@ -49,9 +71,7 @@ function parseEpisodes(text) {
     if (!seriesTitle || !epLabel || !url) continue;
 
     const epNum = extractEpisodeNumber(epLabel);
-    const epTitle = epNum != null
-      ? `الحلقة ${String(epNum).padStart(2, "0")}`
-      : epLabel;
+    const epTitle = epNum != null ? `الحلقة ${String(epNum).padStart(2, "0")}` : epLabel;
 
     eps.push({
       id: makeEpisodeId(seriesTitle, epLabel, url),
@@ -80,7 +100,16 @@ exports.handler = async (event) => {
       const movies = parseMovies(raw);
       const item = movies.find(x => x.id === id);
       if (!item) return json(404, { error: "Not found" });
-      return json(200, { title: item.title, hls: item.url, image: item.image || "" });
+
+      const kind = detectKind(item.url);
+
+      return json(200, {
+        title: item.title,
+        url: item.url,
+        kind,
+        image: item.image || "",
+        category: item.category || ""
+      });
     }
 
     if (id.startsWith("e_")) {
@@ -88,7 +117,14 @@ exports.handler = async (event) => {
       const eps = parseEpisodes(raw);
       const ep = eps.find(x => x.id === id);
       if (!ep) return json(404, { error: "Not found" });
-      return json(200, { title: ep.title, hls: ep.url });
+
+      const kind = detectKind(ep.url);
+
+      return json(200, {
+        title: ep.title,
+        url: ep.url,
+        kind
+      });
     }
 
     return json(400, { error: "Invalid id" });
