@@ -1,592 +1,454 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>المكتبة</title>
-
+  <title>سهراتنا - تصفح</title>
   <style>
     :root{
-      --bg:#0b0f18;
-      --panel:#11182a;
-      --panel2:#0f1526;
-      --txt:#e9eefc;
-      --muted:#a6b2d6;
-      --brand:#6ea8ff;
-      --brand2:#7c5cff;
-      --stroke:rgba(255,255,255,.10);
-      --shadow:0 20px 60px rgba(0,0,0,.45);
-      --r:18px;
+      --bg:#0b0f19; --card:#101827; --card2:#0f1625; --text:#e8eefc; --muted:#9fb0d0;
+      --border:rgba(255,255,255,.08); --shadow:0 12px 40px rgba(0,0,0,.45);
+      --accent:#7c5cff; --accent2:#3dd6ff;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:
-        radial-gradient(900px 420px at 80% -10%, rgba(124,92,255,.35), transparent 55%),
-        radial-gradient(800px 380px at 20% 0%, rgba(110,168,255,.28), transparent 55%),
-        var(--bg);
-      color:var(--txt);
-      min-height:100vh;
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(124,92,255,.18), transparent 60%),
+                  radial-gradient(1000px 600px at 90% 20%, rgba(61,214,255,.14), transparent 55%),
+                  var(--bg);
+      color:var(--text);
     }
-    a{color:inherit;text-decoration:none}
-    .wrap{max-width:1200px;margin:0 auto;padding:22px}
-    .top{
-      display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-      padding:16px 16px;border:1px solid var(--stroke);border-radius:var(--r);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      box-shadow:var(--shadow);
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:1200px; margin:0 auto; padding:22px 16px 60px}
+    header{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:14px 14px; background:rgba(16,24,39,.65);
+      border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+      position:sticky; top:10px; z-index:5;
     }
-    .brand{
-      display:flex;align-items:center;gap:12px;
-      font-weight:800;letter-spacing:.2px
+    .brand{display:flex; flex-direction:column; gap:2px}
+    .brand .title{font-weight:800; letter-spacing:.2px}
+    .brand .sub{font-size:12px; color:var(--muted)}
+    .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .chip{
+      padding:8px 12px; border-radius:999px; border:1px solid var(--border);
+      background:rgba(255,255,255,.04); color:var(--text); cursor:pointer; user-select:none;
+      font-weight:700; font-size:13px;
     }
-    .logo{
-      width:40px;height:40px;border-radius:14px;
-      background:linear-gradient(135deg, var(--brand), var(--brand2));
-      box-shadow:0 16px 30px rgba(110,168,255,.18);
+    .chip.active{
+      background:linear-gradient(135deg, rgba(124,92,255,.25), rgba(61,214,255,.18));
+      border-color:rgba(124,92,255,.45);
     }
-    .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .input, .select, .btn{
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.06);
-      color:var(--txt);
-      border-radius:14px;
-      padding:10px 12px;
-      outline:none;
+    .search{
+      width:min(340px, 72vw); padding:10px 12px; border-radius:12px; border:1px solid var(--border);
+      background:rgba(0,0,0,.25); color:var(--text); outline:none;
     }
-    .input{min-width:260px}
-    .select{min-width:190px}
-    .btn{
-      cursor:pointer;
-      background:linear-gradient(135deg, rgba(110,168,255,.22), rgba(124,92,255,.18));
-      transition:.2s transform ease, .2s opacity ease;
-      font-weight:700;
-    }
-    .btn:hover{transform:translateY(-1px)}
-    .tabs{
-      margin-top:14px;
-      display:flex;gap:10px;flex-wrap:wrap;
-    }
-    .tab{
-      padding:10px 12px;border-radius:14px;border:1px solid var(--stroke);
-      background:rgba(255,255,255,.04);cursor:pointer;
-      color:var(--muted);font-weight:700;
-    }
-    .tab.active{
-      color:var(--txt);
-      background:linear-gradient(135deg, rgba(110,168,255,.22), rgba(124,92,255,.18));
-    }
-
-    .section{margin-top:22px}
-    .section h2{
-      margin:0 0 12px 0;font-size:18px;
-      display:flex;align-items:center;gap:10px;
-    }
-    .badge{
-      font-size:12px;color:var(--muted);
-      padding:4px 10px;border:1px solid var(--stroke);
-      border-radius:999px;background:rgba(255,255,255,.04);
-    }
-
+    .section{margin-top:18px}
+    .section h2{margin:18px 6px 12px; font-size:18px}
     .grid{
-      display:grid;
-      grid-template-columns:repeat(6, 1fr);
-      gap:14px;
+      display:grid; grid-template-columns:repeat(6, 1fr); gap:12px;
     }
     @media (max-width:1100px){ .grid{grid-template-columns:repeat(5,1fr)} }
     @media (max-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
-    @media (max-width:720px){ .grid{grid-template-columns:repeat(2,1fr)} .input{min-width:0;flex:1} .select{min-width:0;flex:1} }
+    @media (max-width:700px){ .grid{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:520px){ .grid{grid-template-columns:repeat(2,1fr)} }
 
     .card{
-      border:1px solid var(--stroke);
-      border-radius:18px;
-      overflow:hidden;
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-      box-shadow:0 10px 30px rgba(0,0,0,.22);
-      cursor:pointer;
-      transition:.18s transform ease, .18s filter ease;
-      min-height:260px;
-      display:flex;flex-direction:column;
+      border:1px solid var(--border); border-radius:16px; overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow:0 10px 26px rgba(0,0,0,.35);
+      transition: transform .15s ease, border-color .15s ease;
     }
-    .card:hover{transform:translateY(-2px);filter:brightness(1.06)}
-    .thumb{
-      width:100%;
-      aspect-ratio:2/3;
-      background:#0a0f1c;
-      position:relative;
+    .card:hover{transform: translateY(-2px); border-color:rgba(124,92,255,.35)}
+    .poster{
+      width:100%; aspect-ratio: 2/3; background:#0a0f18; position:relative;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
     }
-    .thumb img{
-      width:100%;height:100%;object-fit:cover;display:block;
+    .poster img{width:100%; height:100%; object-fit:cover; display:block; filter:saturate(1.05)}
+    .badge{
+      position:absolute; top:10px; right:10px;
+      padding:6px 10px; border-radius:999px;
+      background:rgba(0,0,0,.45); border:1px solid var(--border);
+      font-size:12px; font-weight:800;
     }
-    .chip{
-      position:absolute;right:10px;top:10px;
-      padding:6px 10px;border-radius:999px;
-      background:rgba(0,0,0,.50);
-      border:1px solid rgba(255,255,255,.18);
-      font-size:12px;font-weight:800;
-      backdrop-filter: blur(8px);
-    }
-    .meta{
-      padding:10px 10px 12px;
-      display:flex;flex-direction:column;gap:6px;
-    }
-    .title{
-      font-weight:900;font-size:13px;line-height:1.25;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-    }
-    .sub{
-      font-size:12px;color:var(--muted);
-      display:flex;align-items:center;justify-content:space-between;gap:8px;
-    }
-
+    .meta{padding:10px 12px 12px}
+    .name{font-weight:800; font-size:13px; line-height:1.35}
+    .small{margin-top:6px; color:var(--muted); font-size:12px}
     .empty{
-      padding:16px;border:1px dashed var(--stroke);border-radius:18px;
-      color:var(--muted);background:rgba(255,255,255,.03);
+      padding:18px 14px; border:1px dashed rgba(255,255,255,.18);
+      border-radius:16px; color:var(--muted);
+      background:rgba(255,255,255,.03);
     }
 
-    /* Modal */
+    /* Episodes modal */
+    .modalBack{
+      position:fixed; inset:0; background:rgba(0,0,0,.6);
+      display:none; align-items:center; justify-content:center; z-index:10;
+      padding:14px;
+    }
     .modal{
-      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.62);backdrop-filter:blur(8px);
-      padding:18px;
-      z-index:9999;
+      width:min(920px, 96vw); max-height:88vh; overflow:auto;
+      background:rgba(16,24,39,.92); border:1px solid var(--border);
+      border-radius:18px; box-shadow:var(--shadow); backdrop-filter: blur(10px);
     }
-    .modal.show{display:flex}
-    .modalBox{
-      width:min(980px, 100%);
-      border:1px solid var(--stroke);
-      border-radius:22px;
-      background:linear-gradient(180deg, rgba(17,24,42,.95), rgba(10,14,26,.96));
-      box-shadow:var(--shadow);
-      overflow:hidden;
+    .modalHead{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:14px 14px; border-bottom:1px solid var(--border);
+      position:sticky; top:0; background:rgba(16,24,39,.92); z-index:2;
     }
-    .modalTop{
-      display:flex;gap:14px;align-items:center;justify-content:space-between;
-      padding:14px 14px;border-bottom:1px solid var(--stroke);
+    .modalTitle{font-weight:900}
+    .closeBtn{
+      border:1px solid var(--border); background:rgba(255,255,255,.04);
+      color:var(--text); padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:800;
     }
-    .modalTop .left{display:flex;gap:12px;align-items:center}
-    .modalPoster{
-      width:52px;height:52px;border-radius:16px;overflow:hidden;border:1px solid var(--stroke);
-      background:#0a0f1c;flex:0 0 auto;
+    .epList{padding:12px 14px}
+    .epItem{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      padding:10px 10px; border:1px solid var(--border); border-radius:14px;
+      background:rgba(255,255,255,.03); margin-bottom:10px;
     }
-    .modalPoster img{width:100%;height:100%;object-fit:cover}
-    .modalName{font-weight:900}
-    .modalClose{
-      cursor:pointer;border:1px solid var(--stroke);background:rgba(255,255,255,.06);
-      color:var(--txt);border-radius:14px;padding:10px 12px;font-weight:800;
+    .epLeft{display:flex; flex-direction:column; gap:4px}
+    .epName{font-weight:900}
+    .epSub{font-size:12px; color:var(--muted)}
+    .playBtn{
+      border:1px solid rgba(124,92,255,.45);
+      background:linear-gradient(135deg, rgba(124,92,255,.26), rgba(61,214,255,.14));
+      color:var(--text); padding:9px 12px; border-radius:12px; cursor:pointer; font-weight:900;
     }
-    .modalBody{padding:14px}
-    .epsGrid{
-      display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;
-    }
-    @media (max-width:900px){ .epsGrid{grid-template-columns:repeat(3,1fr)} }
-    @media (max-width:720px){ .epsGrid{grid-template-columns:repeat(2,1fr)} }
-    .epBtn{
-      padding:12px 12px;border-radius:16px;border:1px solid var(--stroke);
-      background:rgba(255,255,255,.05);cursor:pointer;
-      display:flex;align-items:center;justify-content:space-between;gap:8px;
-      font-weight:800;
-      transition:.15s transform ease;
-    }
-    .epBtn:hover{transform:translateY(-1px)}
-    .epSmall{font-size:12px;color:var(--muted);font-weight:700}
   </style>
 </head>
-
 <body>
   <div class="wrap">
-    <div class="top">
+    <header>
       <div class="brand">
-        <div class="logo"></div>
-        <div>
-          <div style="font-size:14px;color:var(--muted);font-weight:700">المكتبة</div>
-          <div style="font-size:18px;font-weight:900">أفلام + مسلسلات</div>
-        </div>
+        <div class="title">سهراتنا</div>
+        <div class="sub">أفلام ومسلسلات</div>
       </div>
-
-      <div class="actions">
-        <input id="q" class="input" type="search" placeholder="ابحث بالعنوان..." />
-        <select id="genre" class="select">
-          <option value="">كل التصنيفات</option>
-        </select>
-        <button id="reload" class="btn">تحديث</button>
+      <div class="controls">
+        <input id="q" class="search" placeholder="ابحث عن فيلم أو مسلسل..." />
+        <div id="chips"></div>
       </div>
-    </div>
+    </header>
 
-    <div class="tabs">
-      <button class="tab active" data-tab="all">الكل</button>
-      <button class="tab" data-tab="movies">الأفلام</button>
-      <button class="tab" data-tab="tunisian">الأفلام التونسية</button>
-      <button class="tab" data-tab="series">المسلسلات</button>
-      <button class="tab" data-tab="foreign">المسلسلات الأجنبية</button>
+    <div class="section">
+      <h2 id="secTitle">المحتوى</h2>
+      <div id="grid" class="grid"></div>
+      <div id="empty" class="empty" style="display:none">لا توجد نتائج.</div>
     </div>
-
-    <div id="content"></div>
   </div>
 
-  <!-- Episodes Modal -->
-  <div id="modal" class="modal" role="dialog" aria-modal="true">
-    <div class="modalBox">
-      <div class="modalTop">
-        <div class="left">
-          <div class="modalPoster"><img id="mPoster" alt=""></div>
-          <div>
-            <div id="mName" class="modalName"></div>
-            <div id="mMeta" style="color:var(--muted);font-size:12px;font-weight:700;margin-top:4px"></div>
-          </div>
+  <!-- Episodes modal -->
+  <div id="modalBack" class="modalBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div>
+          <div id="modalTitle" class="modalTitle">الحلقات</div>
+          <div id="modalSub" class="epSub"></div>
         </div>
-        <button id="mClose" class="modalClose">إغلاق</button>
+        <button id="closeModal" class="closeBtn">إغلاق</button>
       </div>
-      <div class="modalBody">
-        <div id="mEps" class="epsGrid"></div>
-      </div>
+      <div id="epList" class="epList"></div>
     </div>
   </div>
 
   <script>
-    const ENDPOINT_CATALOG = "/.netlify/functions/catalog";
-    const ENDPOINT_FOREIGN = "/.netlify/functions/foreignSeries";
+    const $ = (id) => document.getElementById(id);
 
-    const elContent = document.getElementById("content");
-    const elQ = document.getElementById("q");
-    const elGenre = document.getElementById("genre");
-    const elReload = document.getElementById("reload");
+    // Endpoints
+    const CATALOG_URL = "/.netlify/functions/catalog";
+    const FOREIGN_SERIES_URL = "/.netlify/functions/foreignSeries";
 
-    const elModal = document.getElementById("modal");
-    const elMPoster = document.getElementById("mPoster");
-    const elMName = document.getElementById("mName");
-    const elMMeta = document.getElementById("mMeta");
-    const elMEps = document.getElementById("mEps");
-    const elMClose = document.getElementById("mClose");
+    // State
+    let allItems = []; // normalized items for UI
+    let activeCategory = "all";
 
-    let activeTab = "all";
+    // Category chips (Arabic labels)
+    const categories = [
+      { id:"all", label:"الكل" },
+      { id:"films", label:"الأفلام" },
+      { id:"series", label:"المسلسلات" },
+      { id:"tunisian", label:"أفلام تونسية" },
+      { id:"foreignSeries", label:"مسلسلات أجنبية" },
+    ];
 
-    let catalog = null;
-    let foreign = null;
+    function setChips(){
+      const box = $("chips");
+      box.innerHTML = "";
+      categories.forEach(c=>{
+        const b = document.createElement("button");
+        b.className = "chip" + (c.id===activeCategory ? " active":"");
+        b.textContent = c.label;
+        b.onclick = ()=>{ activeCategory=c.id; setChips(); render(); };
+        box.appendChild(b);
+      });
+    }
 
-    function setTab(tab){
-      activeTab = tab;
-      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    // Helpers
+    function safeText(s){ return (s ?? "").toString().trim(); }
+    function pickPoster(obj){
+      return safeText(obj.image || obj.poster || obj.cover || obj.img || "");
+    }
+
+    function makeCard({ title, poster, badge, subtitle, onClick }){
+      const card = document.createElement("a");
+      card.className = "card";
+      card.href = "javascript:void(0)";
+      card.onclick = onClick;
+
+      const p = document.createElement("div");
+      p.className = "poster";
+      if (poster){
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.referrerPolicy = "no-referrer";
+        img.src = poster;
+        p.appendChild(img);
+      }
+      if (badge){
+        const b = document.createElement("div");
+        b.className = "badge";
+        b.textContent = badge;
+        p.appendChild(b);
+      }
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const n = document.createElement("div");
+      n.className = "name";
+      n.textContent = title || "بدون عنوان";
+      const s = document.createElement("div");
+      s.className = "small";
+      s.textContent = subtitle || "";
+      meta.appendChild(n);
+      meta.appendChild(s);
+
+      card.appendChild(p);
+      card.appendChild(meta);
+      return card;
+    }
+
+    function openWatchHls({ hlsUrl, title, poster, subs }){
+      // store subs in localStorage and pass subkey
+      const subkey = "subs_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+      localStorage.setItem(subkey, JSON.stringify(Array.isArray(subs) ? subs : []));
+      const url =
+        "watch.html?type=hls" +
+        "&src=" + encodeURIComponent(hlsUrl) +
+        "&title=" + encodeURIComponent(title || "") +
+        (poster ? "&poster=" + encodeURIComponent(poster) : "") +
+        "&subkey=" + encodeURIComponent(subkey);
+      location.href = url;
+    }
+
+    function openWatchBunny({ embedUrl, title }){
+      const url =
+        "watch.html?type=bunny" +
+        "&src=" + encodeURIComponent(embedUrl) +
+        "&title=" + encodeURIComponent(title || "");
+      location.href = url;
+    }
+
+    // Modal
+    function showEpisodes(seriesTitle, seriesImage, episodes){
+      $("modalTitle").textContent = seriesTitle || "الحلقات";
+      $("modalSub").textContent = (episodes?.length ? (episodes.length + " حلقة") : "");
+      const list = $("epList");
+      list.innerHTML = "";
+
+      (episodes || []).forEach((ep)=>{
+        const epTitle = safeText(ep.title || ep.name || "");
+        const hlsUrl = safeText(ep.hlsUrl || ep.url || ep.hls || "");
+        const subs = ep.subs || ep.subtitles || [];
+        const row = document.createElement("div");
+        row.className = "epItem";
+
+        const left = document.createElement("div");
+        left.className = "epLeft";
+        const t = document.createElement("div");
+        t.className = "epName";
+        t.textContent = epTitle || "حلقة";
+        const sub = document.createElement("div");
+        sub.className = "epSub";
+        sub.textContent = (Array.isArray(subs) && subs.length) ? ("ترجمة: " + subs.map(x=>x.label||x.lang||"").filter(Boolean).join(" / ")) : "بدون ترجمة";
+        left.appendChild(t);
+        left.appendChild(sub);
+
+        const btn = document.createElement("button");
+        btn.className = "playBtn";
+        btn.textContent = "تشغيل";
+        btn.onclick = ()=>{
+          hideModal();
+          openWatchHls({
+            hlsUrl,
+            title: (seriesTitle ? (seriesTitle + " - "):"") + epTitle,
+            poster: seriesImage,
+            subs
+          });
+        };
+
+        row.appendChild(left);
+        row.appendChild(btn);
+        list.appendChild(row);
+      });
+
+      $("modalBack").style.display = "flex";
+    }
+    function hideModal(){ $("modalBack").style.display = "none"; }
+    $("closeModal").onclick = hideModal;
+    $("modalBack").addEventListener("click",(e)=>{ if(e.target === $("modalBack")) hideModal(); });
+
+    // Load & normalize data
+    async function fetchJson(url){
+      const r = await fetch(url + (url.includes("?") ? "&":"?") + "t=" + Date.now(), { cache:"no-store" });
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return await r.json();
+    }
+
+    function normalizeMainCatalog(data){
+      // Your main catalog returns flat list where:
+      // - films have "title"
+      // - series episodes have "seriesTitle" + "ep" + "hlsUrl" + maybe image
+      const items = [];
+
+      // Films
+      data.filter(x=>x.title).forEach(m=>{
+        items.push({
+          kind:"film",
+          category: (safeText(m.category).toLowerCase().includes("tunis") ? "tunisian" : "films"),
+          title: safeText(m.title),
+          poster: safeText(m.image || m.poster || ""),
+          // Bunny embed url for films can be provided by you; if not, fallback to hls type
+          bunny: safeText(m.bunnyEmbed || m.bunnyUrl || m.embed || ""),
+          hls: safeText(m.hlsUrl || m.url || "")
+        });
+      });
+
+      // Series episodes -> group
+      const bySeries = new Map();
+      data.filter(x=>x.seriesTitle).forEach(ep=>{
+        const st = safeText(ep.seriesTitle);
+        if(!bySeries.has(st)){
+          bySeries.set(st, { title: st, image: pickPoster(ep), episodes: [] });
+        }
+        const group = bySeries.get(st);
+        if(!group.image) group.image = pickPoster(ep);
+
+        group.episodes.push({
+          title: safeText(ep.ep || ep.title || ep.name || ""),
+          hlsUrl: safeText(ep.hlsUrl || ep.url || ""),
+          subs: ep.subs || ep.subtitles || []
+        });
+      });
+
+      for (const s of bySeries.values()){
+        // sort episodes by number if possible
+        s.episodes.sort((a,b)=>{
+          const na = parseInt((a.title.match(/\d+/)||["0"])[0],10);
+          const nb = parseInt((b.title.match(/\d+/)||["0"])[0],10);
+          return na-nb;
+        });
+        items.push({
+          kind:"series",
+          category:"series",
+          title:s.title,
+          poster:s.image,
+          episodes:s.episodes
+        });
+      }
+
+      return items;
+    }
+
+    function normalizeForeignSeries(data){
+      // foreignSeries JSON you showed:
+      // [{ title, image, episodes:[{ title, hlsUrl, subs:[{lang,label,url}] }] }]
+      return (data || []).map(s=>({
+        kind:"foreignSeries",
+        category:"foreignSeries",
+        title: safeText(s.title),
+        poster: safeText(s.image),
+        episodes: (s.episodes || []).map(ep=>({
+          title: safeText(ep.title),
+          hlsUrl: safeText(ep.hlsUrl),
+          subs: Array.isArray(ep.subs) ? ep.subs : []
+        }))
+      }));
+    }
+
+    async function load(){
+      setChips();
+
+      let main = [];
+      let foreign = [];
+      try { main = normalizeMainCatalog(await fetchJson(CATALOG_URL)); } catch(e){ main = []; }
+      try { foreign = normalizeForeignSeries(await fetchJson(FOREIGN_SERIES_URL)); } catch(e){ foreign = []; }
+
+      allItems = [...main, ...foreign];
       render();
     }
 
-    document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
-    elQ.addEventListener("input", render);
-    elGenre.addEventListener("change", render);
-    elReload.addEventListener("click", loadAll);
+    function render(){
+      const q = safeText($("q").value).toLowerCase();
+      const grid = $("grid");
+      grid.innerHTML = "";
 
-    elMClose.addEventListener("click", closeModal);
-    elModal.addEventListener("click", (e) => { if(e.target === elModal) closeModal(); });
+      let items = allItems.slice();
 
-    function escapeHtml(s){
-      return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-    }
-
-    function b64UrlEncode(str){
-      const bytes = new TextEncoder().encode(str);
-      let bin = "";
-      bytes.forEach(b => bin += String.fromCharCode(b));
-      const b64 = btoa(bin);
-      return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    }
-
-    function makeWatchUrl({type, src, title, poster, subs}){
-      const p = new URLSearchParams();
-      p.set("type", type);
-      p.set("src", src);
-      if(title) p.set("title", title);
-      if(poster) p.set("poster", poster);
-
-      // subs as base64url(JSON)
-      if(subs && Array.isArray(subs) && subs.length){
-        p.set("subs", b64UrlEncode(JSON.stringify(subs)));
+      // Filter by category chip
+      if(activeCategory !== "all"){
+        items = items.filter(x=>x.category === activeCategory);
       }
 
-      return "/watch.html?" + p.toString();
-    }
+      // Search filter
+      if(q){
+        items = items.filter(x => safeText(x.title).toLowerCase().includes(q));
+      }
 
-    function card({title, img, chip, subLeft, subRight, onClick}){
-      const div = document.createElement("a");
-      div.className = "card";
-      div.href = "javascript:void(0)";
-      div.addEventListener("click", onClick);
+      $("secTitle").textContent =
+        categories.find(c=>c.id===activeCategory)?.label || "المحتوى";
 
-      div.innerHTML = `
-        <div class="thumb">
-          <img loading="lazy" src="${escapeHtml(img)}" alt="${escapeHtml(title)}">
-          ${chip ? `<div class="chip">${escapeHtml(chip)}</div>` : ``}
-        </div>
-        <div class="meta">
-          <div class="title">${escapeHtml(title)}</div>
-          <div class="sub">
-            <span>${escapeHtml(subLeft || "")}</span>
-            <span>${escapeHtml(subRight || "")}</span>
-          </div>
-        </div>
-      `;
-      return div;
-    }
-
-    function section(title, count){
-      const wrap = document.createElement("div");
-      wrap.className = "section";
-      wrap.innerHTML = `
-        <h2>${escapeHtml(title)} <span class="badge">${count}</span></h2>
-        <div class="grid"></div>
-      `;
-      return wrap;
-    }
-
-    function empty(msg){
-      const d = document.createElement("div");
-      d.className = "empty";
-      d.textContent = msg;
-      return d;
-    }
-
-    function openModal({name, poster, meta, episodes, type}){
-      elMPoster.src = poster || "";
-      elMName.textContent = name || "";
-      elMMeta.textContent = meta || "";
-      elMEps.innerHTML = "";
-
-      episodes.forEach((ep, idx) => {
-        const btn = document.createElement("button");
-        btn.className = "epBtn";
-        btn.innerHTML = `
-          <span>${escapeHtml(ep.title || ("حلقة " + (idx+1)))}</span>
-          <span class="epSmall">${escapeHtml(ep.hint || "")}</span>
-        `;
-        btn.addEventListener("click", () => {
-          // Normal series episodes are redirect URLs (shofha)
-          // Foreign series episodes are direct m3u8
-          const url = makeWatchUrl({
-            type,
-            src: ep.src,
-            title: ep.fullTitle || (name + " - " + (ep.title || "")),
-            poster,
-            subs: ep.subs || []
-          });
-          window.location.href = url;
-        });
-        elMEps.appendChild(btn);
-      });
-
-      elModal.classList.add("show");
-      document.body.style.overflow = "hidden";
-    }
-
-    function closeModal(){
-      elModal.classList.remove("show");
-      document.body.style.overflow = "";
-    }
-
-    async function safeJson(url){
-      const r = await fetch(url, {cache:"no-store"});
-      if(!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    }
-
-    function fillGenreDropdown(){
-      const current = elGenre.value;
-      const genres = new Set();
-
-      // Arabic series genres from catalog.series
-      (catalog?.series || []).forEach(s => {
-        const g = (s.genre || "").trim();
-        if(g) genres.add(g);
-      });
-
-      // foreign series: no genre => keep blank
-      const sorted = Array.from(genres).sort((a,b)=>a.localeCompare(b,'ar'));
-
-      elGenre.innerHTML = `<option value="">كل التصنيفات</option>` + sorted.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join("");
-      elGenre.value = sorted.includes(current) ? current : "";
-    }
-
-    function matchesQuery(title){
-      const q = (elQ.value || "").trim().toLowerCase();
-      if(!q) return true;
-      return String(title || "").toLowerCase().includes(q);
-    }
-
-    function matchesGenre(genre){
-      const g = (elGenre.value || "").trim();
-      if(!g) return true;
-      return String(genre || "").trim() === g;
-    }
-
-    function render(){
-      elContent.innerHTML = "";
-
-      if(!catalog){
-        elContent.appendChild(empty("جاري تحميل البيانات..."));
+      if(!items.length){
+        $("empty").style.display = "block";
         return;
       }
+      $("empty").style.display = "none";
 
-      const movies = catalog.movies || [];
-      const series = catalog.series || [];
-      const movieCategories = catalog.movieCategories || [];
-      const foreignSeries = Array.isArray(foreign) ? foreign : [];
-
-      // split movie categories
-      const films = movies.filter(m => m.category === "أفلام");
-      const tunisian = movies.filter(m => m.category === "أفلام تونسية");
-
-      // apply search filters
-      const filmsF = films.filter(m => matchesQuery(m.title));
-      const tunisianF = tunisian.filter(m => matchesQuery(m.title));
-      const seriesF = series.filter(s => matchesQuery(s.title) && matchesGenre(s.genre));
-      const foreignF = foreignSeries.filter(s => matchesQuery(s.title));
-
-      const showAll = activeTab === "all";
-
-      // MOVIES
-      if(showAll || activeTab === "movies"){
-        const s = section("الأفلام", filmsF.length);
-        const grid = s.querySelector(".grid");
-        filmsF.forEach(m => {
-          grid.appendChild(card({
-            title: m.title,
-            img: m.image,
-            chip: "فيلم",
-            subLeft: "",
-            subRight: "",
-            onClick: () => {
-              // shofha redirect -> watch will resolve
-              window.location.href = makeWatchUrl({
-                type: "redirect",
-                src: m.url,
-                title: m.title,
-                poster: m.image
-              });
+      items.forEach(item=>{
+        if(item.kind === "film"){
+          const badge = (item.category==="tunisian") ? "🇹🇳" : "🎬";
+          grid.appendChild(makeCard({
+            title: item.title,
+            poster: item.poster,
+            badge,
+            subtitle: "فيلم",
+            onClick: ()=>{
+              // If you provided Bunny embed link -> use Bunny iframe
+              if(item.bunny && item.bunny.includes("player.mediadelivery.net/embed")){
+                openWatchBunny({ embedUrl:item.bunny, title:item.title });
+              }else{
+                // fallback to HLS if needed
+                openWatchHls({ hlsUrl:item.hls, title:item.title, poster:item.poster, subs:[] });
+              }
             }
           }));
-        });
-        elContent.appendChild(s);
-        if(!filmsF.length) elContent.appendChild(empty("لا توجد أفلام مطابقة للبحث."));
-      }
-
-      // TUNISIAN
-      if(showAll || activeTab === "tunisian"){
-        const s = section("الأفلام التونسية", tunisianF.length);
-        const grid = s.querySelector(".grid");
-        tunisianF.forEach(m => {
-          grid.appendChild(card({
-            title: m.title,
-            img: m.image,
-            chip: "تونسي",
-            subLeft: "",
-            subRight: "",
-            onClick: () => {
-              window.location.href = makeWatchUrl({
-                type: "redirect",
-                src: m.url,
-                title: m.title,
-                poster: m.image
-              });
-            }
+        } else {
+          // series / foreignSeries: open episode list modal
+          const badge = (item.kind==="foreignSeries") ? "🌍" : "📺";
+          grid.appendChild(makeCard({
+            title: item.title,
+            poster: item.poster,
+            badge,
+            subtitle: (item.episodes?.length ? (item.episodes.length + " حلقة") : "مسلسل"),
+            onClick: ()=> showEpisodes(item.title, item.poster, item.episodes)
           }));
-        });
-        elContent.appendChild(s);
-        if(!tunisianF.length) elContent.appendChild(empty("لا توجد أفلام تونسية مطابقة للبحث."));
-      }
-
-      // SERIES (Arabic)
-      if(showAll || activeTab === "series"){
-        const s = section("المسلسلات", seriesF.length);
-        const grid = s.querySelector(".grid");
-        seriesF.forEach(sr => {
-          grid.appendChild(card({
-            title: sr.title,
-            img: sr.image,
-            chip: (sr.genre || "مسلسل"),
-            subLeft: (sr.count ? (sr.count + " حلقة") : ""),
-            subRight: "",
-            onClick: () => {
-              const eps = (sr.episodes || []).map(ep => ({
-                title: ep.title,
-                hint: "EP " + (ep.ep ?? ""),
-                src: ep.url,               // redirect URL (shofha)
-                fullTitle: (ep.seriesTitle || sr.title) + " - " + (ep.title || ""),
-                subs: []                   // no subs here (your Arabic catalog)
-              }));
-
-              openModal({
-                name: sr.title,
-                poster: sr.image,
-                meta: (sr.genre ? ("التصنيف: " + sr.genre + " • ") : "") + (sr.count ? (sr.count + " حلقة") : ""),
-                episodes: eps,
-                type: "redirect"
-              });
-            }
-          }));
-        });
-        elContent.appendChild(s);
-        if(!seriesF.length) elContent.appendChild(empty("لا توجد مسلسلات مطابقة (أو اختر تصنيف مختلف)."));
-      }
-
-      // FOREIGN SERIES
-      if(showAll || activeTab === "foreign"){
-        const s = section("المسلسلات الأجنبية", foreignF.length);
-        const grid = s.querySelector(".grid");
-        foreignF.forEach(season => {
-          const epCount = Array.isArray(season.episodes) ? season.episodes.length : 0;
-          grid.appendChild(card({
-            title: season.title,
-            img: season.image,
-            chip: "Foreign",
-            subLeft: epCount ? (epCount + " حلقة") : "",
-            subRight: "",
-            onClick: () => {
-              const eps = (season.episodes || []).map((ep, idx) => ({
-                title: ep.title || ("Episode " + (idx+1)),
-                hint: "HLS",
-                src: ep.hlsUrl, // direct m3u8
-                fullTitle: season.title + " - " + (ep.title || ""),
-                subs: Array.isArray(ep.subs) ? ep.subs : []
-              }));
-
-              openModal({
-                name: season.title,
-                poster: season.image,
-                meta: epCount ? ("عدد الحلقات: " + epCount) : "",
-                episodes: eps,
-                type: "hls"
-              });
-            }
-          }));
-        });
-        elContent.appendChild(s);
-        if(!foreignF.length) elContent.appendChild(empty("لا توجد مسلسلات أجنبية مطابقة للبحث."));
-      }
-    }
-
-    async function loadAll(){
-      elContent.innerHTML = "";
-      elContent.appendChild(empty("جاري التحميل..."));
-
-      try{
-        // catalog
-        catalog = await safeJson(ENDPOINT_CATALOG + "?t=" + Date.now());
-
-        // foreign series (optional)
-        try{
-          foreign = await safeJson(ENDPOINT_FOREIGN + "?t=" + Date.now());
-        }catch(_){
-          foreign = [];
         }
-
-        fillGenreDropdown();
-        render();
-      }catch(e){
-        elContent.innerHTML = "";
-        elContent.appendChild(empty("صار خطأ في تحميل البيانات. تأكد من functions وجرّب مرة أخرى."));
-      }
+      });
     }
 
-    loadAll();
+    $("q").addEventListener("input", render);
+
+    load();
   </script>
 </body>
 </html>
