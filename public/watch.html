@@ -318,7 +318,7 @@
       track.label = s.label || ("SUB " + (idx + 1));
       // Use lang from json: "s1", "s2" ... (valid enough)
       track.srclang = (s.lang || ("s" + (idx + 1))).toString().toLowerCase();
-      track.src = s.url;
+      track.src = "/.netlify/functions/subtitleProxy?url=" + encodeURIComponent(s.url);
 
       // Only first one default (so user sees it in CC menu)
       if (idx === 0) track.default = true;
