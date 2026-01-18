@@ -5,24 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>المشاهدة</title>
 
-  <!-- hls.js (for .m3u8 on browsers without native HLS) -->
+  <!-- hls.js (only for .m3u8) -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
   <style>
     :root{
       --bg:#070A12;
-      --card:#0D1325;
-      --card2:#0B1020;
       --text:#EAF0FF;
       --muted:#A7B2D6;
       --line:rgba(255,255,255,.08);
       --accent:#7C5CFF;
-      --accent2:#22C55E;
-      --danger:#EF4444;
       --shadow: 0 14px 40px rgba(0,0,0,.55);
       --radius:18px;
     }
-
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -33,7 +28,6 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Kufi Arabic", "Noto Sans Arabic", sans-serif;
       min-height:100vh;
     }
-
     header{
       max-width:1200px;
       margin: 18px auto 0;
@@ -43,27 +37,13 @@
       justify-content:space-between;
       gap:12px;
     }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      user-select:none;
-    }
+    .brand{ display:flex; align-items:center; gap:10px; user-select:none; }
     .dot{
       width:10px;height:10px;border-radius:50%;
       background: linear-gradient(135deg, var(--accent), #4FD1C5);
       box-shadow: 0 0 0 6px rgba(124,92,255,.14);
     }
-    .brand span{
-      font-weight:800;
-      letter-spacing:.2px;
-    }
-
-    .top-actions{
-      display:flex; gap:10px; align-items:center;
-    }
-
+    .brand span{ font-weight:900; letter-spacing:.2px; }
     .btn{
       appearance:none;
       border:1px solid var(--line);
@@ -72,23 +52,17 @@
       padding:10px 14px;
       border-radius:12px;
       cursor:pointer;
-      font-weight:700;
+      font-weight:800;
       transition: .15s ease;
     }
     .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.06); }
     .btn:active{ transform: translateY(0px); }
-
-    .btn-accent{
-      border-color: rgba(124,92,255,.35);
-      background: rgba(124,92,255,.18);
-    }
 
     main{
       max-width:1200px;
       margin: 14px auto 28px;
       padding: 0 16px;
     }
-
     .shell{
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border:1px solid var(--line);
@@ -96,7 +70,6 @@
       box-shadow: var(--shadow);
       overflow:hidden;
     }
-
     .meta{
       padding:14px 16px;
       display:flex;
@@ -107,9 +80,9 @@
       background: rgba(10,14,30,.55);
     }
     .meta .title{
-      font-weight:900;
+      font-weight:950;
       font-size: 15px;
-      line-height:1.2;
+      line-height:1.25;
     }
     .meta .sub{
       color:var(--muted);
@@ -119,7 +92,7 @@
 
     .player-wrap{
       position:relative;
-      background: #000;
+      background:#000;
     }
 
     video{
@@ -138,7 +111,6 @@
       background:#000;
     }
 
-    /* Small floating controls (no big overlay) */
     .float-controls{
       position:absolute;
       left:14px;
@@ -156,16 +128,13 @@
       padding:10px 12px;
       border-radius: 999px;
       cursor:pointer;
-      font-weight:800;
+      font-weight:900;
       font-size:13px;
-      display:none; /* shown only when needed */
+      display:none;
       box-shadow: 0 8px 20px rgba(0,0,0,.35);
       user-select:none;
     }
     .chip:hover{ background: rgba(10,14,30,.78); }
-
-    .chip-green{ border-color: rgba(34,197,94,.35); }
-    .chip-purple{ border-color: rgba(124,92,255,.4); }
 
     .msg{
       padding: 14px 16px;
@@ -175,10 +144,7 @@
       background: rgba(10,14,30,.35);
       border-top:1px solid var(--line);
     }
-
-    .error{
-      color: #ffd0d0;
-    }
+    .error{ color:#ffd0d0; }
 
     /* Smaller captions */
     video::cue{
@@ -186,7 +152,6 @@
       line-height: 1.35;
       background: rgba(0,0,0,.55);
     }
-
     @media (max-width:520px){
       .meta .title{ font-size: 14px; }
       video::cue{ font-size: 13px; }
@@ -200,10 +165,7 @@
       <div class="dot"></div>
       <span>مشاهدة</span>
     </div>
-
-    <div class="top-actions">
-      <button class="btn" id="backBtn">رجوع</button>
-    </div>
+    <button class="btn" id="backBtn">رجوع</button>
   </header>
 
   <main>
@@ -219,12 +181,12 @@
         <!-- HLS / MP4 -->
         <video id="video" controls playsinline preload="metadata"></video>
 
-        <!-- Bunny embed -->
+        <!-- Bunny embed player -->
         <iframe id="bunnyFrame" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
 
         <div class="float-controls">
-          <div class="chip chip-green" id="unmuteBtn">🔊 تشغيل الصوت</div>
-          <div class="chip chip-purple" id="subsBtn">💬 الترجمة</div>
+          <div class="chip" id="unmuteBtn">🔊 تشغيل الصوت</div>
+          <div class="chip" id="subsBtn">💬 الترجمة</div>
         </div>
       </div>
 
@@ -235,12 +197,14 @@
   <script>
     const qs = new URLSearchParams(location.search);
 
-    const type   = (qs.get("type") || "").toLowerCase(); // hls | mp4 | bunny
-    const src    = qs.get("src") || "";
+    let type   = (qs.get("type") || "").toLowerCase(); // hls | mp4 | bunny (optional)
+    const src  = qs.get("src") || "";
     const title  = qs.get("title") || "المشاهدة";
     const poster = qs.get("poster") || "";
-    const subkey = qs.get("subkey") || ""; // key in localStorage (for foreign series)
-    const suburl = qs.get("sub") || "";    // direct vtt url (optional)
+
+    // foreign series subtitles:
+    const subkey = qs.get("subkey") || ""; // localStorage key that contains subs array
+    const suburl = qs.get("sub") || "";    // direct vtt url
 
     const video = document.getElementById("video");
     const frame = document.getElementById("bunnyFrame");
@@ -253,34 +217,34 @@
     pageTitle.textContent = title;
 
     backBtn.addEventListener("click", () => {
-      // go back safely
       if (history.length > 1) history.back();
       else location.href = "browse.html";
     });
 
-    // Helper: show short status
     function setStatus(text, isError=false){
-      statusText.textContent = text;
+      statusText.textContent = text || "";
       statusText.classList.toggle("error", !!isError);
     }
 
-    // Helper: attempt autoplay (will likely require muted)
-    async function tryAutoPlay(){
-      try {
-        await video.play();
-        return true;
-      } catch(e){
-        return false;
-      }
+    // Detect Bunny embed URL even if "type" wasn't set
+    function isBunnyEmbedUrl(u){
+      if (!u) return false;
+      try{
+        const url = new URL(u);
+        // Bunny embed player domain
+        if (url.hostname.includes("player.mediadelivery.net")) return true;
+      }catch(e){}
+      // fallback string check
+      return u.includes("player.mediadelivery.net/embed/");
     }
 
-    // Show a small "unmute" chip only if video is muted
+    async function tryAutoPlayVideo(){
+      try { await video.play(); return true; } catch(e){ return false; }
+    }
+
     function refreshUnmuteChip(){
-      if (video.style.display !== "none" && video.muted) {
-        unmuteBtn.style.display = "inline-flex";
-      } else {
-        unmuteBtn.style.display = "none";
-      }
+      if (video.style.display !== "none" && video.muted) unmuteBtn.style.display = "inline-flex";
+      else unmuteBtn.style.display = "none";
     }
 
     unmuteBtn.addEventListener("click", async () => {
@@ -289,31 +253,41 @@
       try { await video.play(); } catch(e){}
     });
 
-    // ===== Subtitles loading =====
+    // ===== Subtitles =====
     function clearTracks(){
-      const tracks = Array.from(video.querySelectorAll("track"));
-      tracks.forEach(t => t.remove());
+      Array.from(video.querySelectorAll("track")).forEach(t => t.remove());
     }
 
     function addTrack(vttUrl, lang="ar", label="Arabic", makeDefault=true){
       if (!vttUrl) return false;
-
       const track = document.createElement("track");
       track.kind = "subtitles";
       track.label = label;
-      track.srclang = lang;         // IMPORTANT: must be a valid-ish language code, not "s1"
+      // IMPORTANT: use a valid-ish language code (NOT s1/s2)
+      track.srclang = lang;
       track.src = vttUrl;
       if (makeDefault) track.default = true;
 
       video.appendChild(track);
 
-      // ensure browser actually shows it
-      // after it loads, we set mode to showing
       track.addEventListener("load", () => {
         try { track.track.mode = "showing"; } catch(e){}
       });
 
       return true;
+    }
+
+    function setupSubsToggle(){
+      const tracks = video.textTracks;
+      if (!tracks || !tracks.length) {
+        subsBtn.style.display = "none";
+        return;
+      }
+      subsBtn.style.display = "inline-flex";
+      subsBtn.onclick = () => {
+        const anyShowing = Array.from(tracks).some(t => t.mode === "showing");
+        Array.from(tracks).forEach(t => t.mode = anyShowing ? "hidden" : "showing");
+      };
     }
 
     function loadSubsFromLocalStorage(){
@@ -325,9 +299,6 @@
         if (!Array.isArray(arr) || !arr.length) return false;
 
         clearTracks();
-
-        // Your JSON has subs like [{lang:"s1",label:"SUB 1",url:"..."}]
-        // We'll map them to valid srclang codes: ar, ar-1, ar-2...
         arr.forEach((s, idx) => {
           const url = s?.url || "";
           const label = s?.label || `SUB ${idx+1}`;
@@ -335,16 +306,7 @@
           addTrack(url, lang, label, idx === 0);
         });
 
-        subsBtn.style.display = "inline-flex";
-        subsBtn.onclick = () => {
-          // toggle subtitles show/hide
-          const textTracks = video.textTracks;
-          if (!textTracks || !textTracks.length) return;
-
-          const anyShowing = Array.from(textTracks).some(t => t.mode === "showing");
-          Array.from(textTracks).forEach(t => t.mode = anyShowing ? "hidden" : "showing");
-        };
-
+        setupSubsToggle();
         return true;
       }catch(e){
         return false;
@@ -355,93 +317,73 @@
       if (!suburl) return false;
       clearTracks();
       addTrack(suburl, "ar", "Arabic", true);
-
-      subsBtn.style.display = "inline-flex";
-      subsBtn.onclick = () => {
-        const textTracks = video.textTracks;
-        if (!textTracks || !textTracks.length) return;
-
-        const anyShowing = Array.from(textTracks).some(t => t.mode === "showing");
-        Array.from(textTracks).forEach(t => t.mode = anyShowing ? "hidden" : "showing");
-      };
-
+      setupSubsToggle();
       return true;
     }
 
-    // ===== Player init =====
-    async function initBunny(){
-      // Hide video, show iframe
+    // ===== Bunny embed (iframe) =====
+    function initBunnyEmbed(){
       video.style.display = "none";
       frame.style.display = "block";
       unmuteBtn.style.display = "none";
       subsBtn.style.display = "none";
 
-      // Add autoplay params (Bunny may still require muted)
-      let bunnyUrl = src;
-      if (!bunnyUrl) {
-        setStatus("الرابط غير موجود.", true);
-        return;
-      }
-      bunnyUrl += (bunnyUrl.includes("?") ? "&" : "?") + "autoplay=true&muted=true";
-      frame.src = bunnyUrl;
-
-      setStatus("");
-    }
-
-    async function initHlsOrMp4(){
-      // Show video, hide iframe
-      video.style.display = "block";
-      frame.style.display = "none";
-
-      if (poster) video.poster = poster;
-
-      // Load subtitles first (so they appear when video starts)
-      // Priority: localStorage subs (foreign series) then direct sub url
-      const loadedSubs = loadSubsFromLocalStorage() || loadSubsDirect();
-      if (!loadedSubs) {
-        subsBtn.style.display = "none";
-      }
-
-      // Set source
       if (!src) {
         setStatus("الرابط غير موجود.", true);
         return;
       }
 
-      // Try autoplay (will succeed only if muted on most browsers)
-      // We start muted to ensure it actually autoplays.
+      // Add autoplay & muted for best chance to start.
+      // (Bunny may still require user gesture depending on browser settings)
+      let url = src;
+      url += (url.includes("?") ? "&" : "?") + "autoplay=true&muted=true";
+
+      frame.src = url;
+      setStatus("");
+    }
+
+    // ===== HLS/MP4 (video) =====
+    function initVideoPlayer(){
+      video.style.display = "block";
+      frame.style.display = "none";
+
+      if (poster) video.poster = poster;
+
+      // subtitles: foreign series (subkey) then direct sub=
+      const subsLoaded = loadSubsFromLocalStorage() || loadSubsDirect();
+      if (!subsLoaded) subsBtn.style.display = "none";
+
+      if (!src) {
+        setStatus("الرابط غير موجود.", true);
+        return;
+      }
+
+      // Try to autoplay. Browsers usually require MUTED for autoplay.
       video.muted = true;
       refreshUnmuteChip();
 
-      // HLS
-      if (type === "hls" || src.includes(".m3u8")) {
-        if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = src;
+      const looksM3U8 = src.includes(".m3u8");
 
-          // iOS Safari: autoplay attempt after metadata
+      if (type === "hls" || looksM3U8) {
+        if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          // Safari/iOS native
+          video.src = src;
           video.addEventListener("loadedmetadata", async () => {
-            const ok = await tryAutoPlay();
+            await tryAutoPlayVideo();
             refreshUnmuteChip();
-            if (!ok) setStatus("");
           }, { once:true });
 
         } else if (window.Hls && Hls.isSupported()) {
-          const hls = new Hls({
-            lowLatencyMode: true,
-            backBufferLength: 90
-          });
-
+          const hls = new Hls({ lowLatencyMode:true, backBufferLength:90 });
           hls.loadSource(src);
           hls.attachMedia(video);
 
           hls.on(Hls.Events.MANIFEST_PARSED, async () => {
-            const ok = await tryAutoPlay();
+            await tryAutoPlayVideo();
             refreshUnmuteChip();
-            if (!ok) setStatus("");
           });
 
           hls.on(Hls.Events.ERROR, (evt, data) => {
-            // No debug spam; show simple message
             if (data?.fatal) {
               setStatus("تعذر تشغيل الفيديو. قد يكون السبب قيود المتصفح أو المصدر.", true);
               try { hls.destroy(); } catch(e){}
@@ -453,32 +395,29 @@
         }
 
       } else {
-        // MP4 / direct
+        // MP4 direct
         video.src = src;
         video.addEventListener("loadedmetadata", async () => {
-          const ok = await tryAutoPlay();
+          await tryAutoPlayVideo();
           refreshUnmuteChip();
-          if (!ok) setStatus("");
         }, { once:true });
       }
-
-      // If user interacts anywhere, we can unmute if they want
-      // (we don't auto-unmute; that would fail)
-      document.addEventListener("click", () => {
-        refreshUnmuteChip();
-      }, { once:true });
 
       setStatus("");
     }
 
-    (async function(){
+    // ===== Boot =====
+    (function(){
       setStatus("");
 
-      if (type === "bunny") {
-        await initBunny();
-      } else {
-        await initHlsOrMp4();
-      }
+      // Auto-detect Bunny embed URLs (your films bunny player)
+      const bunny = isBunnyEmbedUrl(src);
+
+      // If it's Bunny embed, force bunny mode.
+      if (bunny) type = "bunny";
+
+      if (type === "bunny") initBunnyEmbed();
+      else initVideoPlayer();
     })();
   </script>
 </body>
