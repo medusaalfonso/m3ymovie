@@ -191,6 +191,63 @@
       line-height:1.6;
     }
 
+    /* Pagination */
+    .pager{
+      margin-top:14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    .pager .info{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .pager .controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .pbtn{
+      padding:9px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      color: var(--text);
+      cursor:pointer;
+      user-select:none;
+      font-size:13px;
+      transition:.12s;
+    }
+    .pbtn:hover{ border-color: rgba(56,189,248,.22); }
+    .pbtn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+    .pnum{
+      padding:9px 10px;
+      min-width:42px;
+      text-align:center;
+      border-radius:14px;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      color: var(--muted);
+      cursor:pointer;
+      user-select:none;
+      font-size:13px;
+    }
+    .pnum.active{
+      color: var(--text);
+      border-color: rgba(34,197,94,.35);
+      background: rgba(34,197,94,.10);
+    }
+
     /* Modal */
     .modal-backdrop{
       position:fixed; inset:0; z-index:100;
@@ -317,12 +374,20 @@
   const modalTitle = $("#modalTitle");
   const modalEpisodes = $("#modalEpisodes");
 
+  const PAGE_SIZE = 10;
+
   let state = {
     tab: "films",
     query: "",
     movies: [],
     series: [],
-    foreign: []
+    foreign: [],
+    pageByTab: {
+      "films": 1,
+      "tun-films": 1,
+      "series": 1,
+      "foreign": 1
+    }
   };
 
   function safeText(v){ return (v ?? "").toString().trim(); }
@@ -344,6 +409,8 @@
 
   q.addEventListener("input", () => {
     state.query = q.value.trim().toLowerCase();
+    // reset page for current tab when searching
+    state.pageByTab[state.tab] = 1;
     render();
   });
 
@@ -377,7 +444,6 @@
       el.addEventListener("click", () => {
         if (!hlsUrl) return;
 
-        // Save subtitles into localStorage and pass subkey to watch.html
         const subkey = "subs_" + Date.now() + "_" + Math.random().toString(16).slice(2);
         localStorage.setItem(subkey, JSON.stringify(subs));
 
@@ -453,11 +519,106 @@
     return safeText(text).toLowerCase().includes(state.query);
   }
 
+  function paginate(items, tabKey){
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    let page = state.pageByTab[tabKey] || 1;
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    state.pageByTab[tabKey] = page;
+
+    const start = (page - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const slice = items.slice(start, end);
+
+    return { slice, total, page, totalPages, startIndex: start };
+  }
+
+  function renderPager({tabKey, total, page, totalPages, startIndex}){
+    // Don't show pager if only one page or nothing
+    if (totalPages <= 1 && total <= PAGE_SIZE) return null;
+
+    const pager = document.createElement("div");
+    pager.className = "pager";
+
+    const from = total === 0 ? 0 : (startIndex + 1);
+    const to = Math.min(startIndex + PAGE_SIZE, total);
+
+    pager.innerHTML = `
+      <div class="info">عرض ${from} - ${to} من ${total}</div>
+      <div class="controls"></div>
+    `;
+
+    const controls = pager.querySelector(".controls");
+
+    const prev = document.createElement("button");
+    prev.className = "pbtn";
+    prev.textContent = "السابق";
+    prev.disabled = page <= 1;
+    prev.addEventListener("click", () => {
+      state.pageByTab[tabKey] = Math.max(1, page - 1);
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    const next = document.createElement("button");
+    next.className = "pbtn";
+    next.textContent = "التالي";
+    next.disabled = page >= totalPages;
+    next.addEventListener("click", () => {
+      state.pageByTab[tabKey] = Math.min(totalPages, page + 1);
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    controls.appendChild(prev);
+
+    // Page numbers (show up to 7)
+    const maxNums = 7;
+    let startPage = Math.max(1, page - Math.floor(maxNums/2));
+    let endPage = Math.min(totalPages, startPage + maxNums - 1);
+    startPage = Math.max(1, endPage - maxNums + 1);
+
+    if (startPage > 1) {
+      controls.appendChild(makePageNum(tabKey, 1, page));
+      if (startPage > 2) controls.appendChild(makeDots());
+    }
+
+    for (let p = startPage; p <= endPage; p++){
+      controls.appendChild(makePageNum(tabKey, p, page));
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) controls.appendChild(makeDots());
+      controls.appendChild(makePageNum(tabKey, totalPages, page));
+    }
+
+    controls.appendChild(next);
+    return pager;
+
+    function makePageNum(tabKey, p, current){
+      const b = document.createElement("div");
+      b.className = "pnum" + (p === current ? " active" : "");
+      b.textContent = String(p);
+      b.addEventListener("click", () => {
+        state.pageByTab[tabKey] = p;
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      return b;
+    }
+    function makeDots(){
+      const d = document.createElement("div");
+      d.className = "pnum";
+      d.textContent = "…";
+      d.style.cursor = "default";
+      return d;
+    }
+  }
+
   // ----- Data loading -----
   async function loadAll(){
-    // 1) Main catalog (movies + series)
     await loadCatalog();
-    // 2) Foreign Series
     await loadForeignSeries();
     render();
   }
@@ -468,16 +629,12 @@
     if (!res.ok) throw new Error("catalog failed");
     const data = await res.json();
 
-    // Support both shapes:
-    // A) { movies:[...], series:[...] }
-    // B) [ ...flatItems ] (old style)
     if (data && typeof data === "object" && !Array.isArray(data)) {
       state.movies = Array.isArray(data.movies) ? data.movies : [];
       state.series = Array.isArray(data.series) ? data.series : [];
       return;
     }
 
-    // fallback: array
     const arr = Array.isArray(data) ? data : [];
     state.movies = arr.filter(x => x.title && x.url);
     state.series = arr.filter(x => x.seriesTitle || x.ep);
@@ -514,11 +671,12 @@
   }
 
   function renderFilms(tunisianOnly){
+    // نفس فلترة ملفك السابق (مع Pagination فقط)
     const all = state.movies
       .filter(m => matchesQuery(m.title))
       .filter(m => {
         const cat = safeText(m.category);
-        if (!tunisianOnly) return cat !== "أفلام تونسية" ? true : true; // show all in Films tab
+        if (!tunisianOnly) return true; // تبويب "الأفلام" يعرض كل الأفلام العادية فقط بالفلتر تحت
         return cat === "أفلام تونسية";
       })
       .filter(m => tunisianOnly ? safeText(m.category) === "أفلام تونسية" : safeText(m.category) === "أفلام");
@@ -526,9 +684,11 @@
     const title = tunisianOnly ? "أفلام تونسية" : "الأفلام";
     content.appendChild(section(title, all.length));
 
+    const { slice, total, page, totalPages, startIndex } = paginate(all, tunisianOnly ? "tun-films" : "films");
+
     const g = grid();
 
-    all.forEach((m) => {
+    slice.forEach((m) => {
       const titleTxt = safeText(m.title);
       const image = safeText(m.image);
       const url = safeText(m.url);
@@ -541,7 +701,6 @@
         onClick: () => {
           if (!url) return;
 
-          // Bunny embed should be embedded by iframe in watch.html
           if (isBunnyEmbed(url)) {
             const go =
               `watch.html?type=bunny` +
@@ -552,7 +711,6 @@
             return;
           }
 
-          // default film: use redirect resolver in watch.html (your previous flow)
           const go =
             `watch.html?type=redirect` +
             `&src=${encodeURIComponent(url)}` +
@@ -564,15 +722,24 @@
     });
 
     content.appendChild(g);
+
+    const pager = renderPager({
+      tabKey: tunisianOnly ? "tun-films" : "films",
+      total, page, totalPages, startIndex
+    });
+    if (pager) content.appendChild(pager);
   }
 
   function renderLocalSeries(){
     const all = state.series.filter(s => matchesQuery(s.title));
 
     content.appendChild(section("المسلسلات", all.length));
+
+    const { slice, total, page, totalPages, startIndex } = paginate(all, "series");
+
     const g = grid();
 
-    all.forEach((s) => {
+    slice.forEach((s) => {
       const seriesName = safeText(s.title);
       const image = safeText(s.image);
       const episodes = Array.isArray(s.episodes) ? s.episodes : [];
@@ -582,22 +749,26 @@
         image,
         badge: "مسلسل",
         metaPills: [`${episodes.length} حلقة`],
-        onClick: () => {
-          showModal(seriesName, episodes, image, seriesName);
-        }
+        onClick: () => showModal(seriesName, episodes, image, seriesName)
       }));
     });
 
     content.appendChild(g);
+
+    const pager = renderPager({ tabKey:"series", total, page, totalPages, startIndex });
+    if (pager) content.appendChild(pager);
   }
 
   function renderForeignSeries(){
     const all = state.foreign.filter(s => matchesQuery(s.title));
 
     content.appendChild(section("مسلسلات أجنبية", all.length));
+
+    const { slice, total, page, totalPages, startIndex } = paginate(all, "foreign");
+
     const g = grid();
 
-    all.forEach((s) => {
+    slice.forEach((s) => {
       const seriesName = safeText(s.title);
       const image = safeText(s.image);
       const episodes = Array.isArray(s.episodes) ? s.episodes : [];
@@ -607,14 +778,14 @@
         image,
         badge: "أجنبي",
         metaPills: [`${episodes.length} حلقة`],
-        onClick: () => {
-          // Foreign eps include hlsUrl + subs[]
-          showModal(seriesName, episodes, image, seriesName);
-        }
+        onClick: () => showModal(seriesName, episodes, image, seriesName)
       }));
     });
 
     content.appendChild(g);
+
+    const pager = renderPager({ tabKey:"foreign", total, page, totalPages, startIndex });
+    if (pager) content.appendChild(pager);
   }
 
   // Start
