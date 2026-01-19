@@ -257,21 +257,57 @@
   }
 
   // Decide if Bunny embed
-  const isBunnyEmbed = type === "bunny" || src.includes("player.mediadelivery.net/embed/");
+  const isBunnyEmbed = type === "bunny" || src.includes("player.mediadelivery.net/embed/") || src.includes("iframe.mediadelivery.net/embed/");
 
   // =========================
-  // Bunny Player (iframe)
+  // Bunny Player (iframe) with Token Authentication
   // =========================
   if (isBunnyEmbed){
     frame.style.display = "block";
     video.style.display = "none";
-    overlay.classList.remove("show");
+    overlay.classList.add("show");
+    elHint.textContent = "جاري تحميل الفيديو...";
 
-    // Use the src directly (your catalog should already provide the embed url)
-    frame.src = src;
+    // Extract video ID from src (either full embed URL or just the GUID)
+    let videoId = src;
+    
+    // If src is already a full embed URL, extract the video ID
+    const embedMatch = src.match(/embed\/(\d+)\/([a-f0-9\-]+)/i);
+    if (embedMatch) {
+      videoId = embedMatch[2]; // Get the GUID part
+    }
 
-    // No “click to play” overlay here; Bunny controls its own playback rules.
-    elHint.textContent = "";
+    // Request token from backend
+    async function loadBunnyVideo(videoId) {
+      try {
+        const response = await fetch('/.netlify/functions/bunny-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId })
+        });
+
+        if (!response.ok) {
+          throw new Error('فشل في الحصول على توكن الفيديو');
+        }
+
+        const { token, expires, libraryId } = await response.json();
+        
+        // Build the authenticated iframe URL
+        const iframeSrc = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?token=${token}&expires=${expires}&autoplay=true&preload=true`;
+        
+        frame.src = iframeSrc;
+        overlay.classList.remove("show");
+        elHint.textContent = "";
+        
+      } catch (error) {
+        console.error('خطأ في تحميل الفيديو:', error);
+        elHint.textContent = "خطأ في تحميل الفيديو";
+        overlay.classList.remove("show");
+        alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
+      }
+    }
+
+    loadBunnyVideo(videoId);
     subsRow.style.display = "none";
     return;
   }
