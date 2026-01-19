@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 function parseSubs(subsRaw) {
   if (!subsRaw) return [];
@@ -31,6 +32,12 @@ function parseSubs(subsRaw) {
   });
 }
 
+// Generate a short unique ID from a string
+function generateId(str, prefix = 'fe') {
+  const hash = crypto.createHash('md5').update(str).digest('hex');
+  return `${prefix}_${hash.substring(0, 8)}`;
+}
+
 export async function handler() {
   try {
     const filePath = path.join(process.cwd(), "functions/data/foreign-series.txt");
@@ -42,6 +49,7 @@ export async function handler() {
       .filter(Boolean);
 
     const map = {};
+    let globalEpisodeIndex = 0;
 
     for (const line of lines) {
       const parts = line.split("|").map(v => v.trim());
@@ -56,6 +64,7 @@ export async function handler() {
 
       if (!map[seriesTitle]) {
         map[seriesTitle] = {
+          id: generateId(seriesTitle, 'fs'), // Generate series ID
           title: seriesTitle,
           image,
           episodes: []
@@ -63,10 +72,14 @@ export async function handler() {
       }
 
       map[seriesTitle].episodes.push({
+        id: generateId(`${seriesTitle}_${epTitle}_${globalEpisodeIndex}`, 'fe'), // Generate episode ID
         title: epTitle,
         hlsUrl,
+        url: hlsUrl, // Add url field for compatibility
         subs: parseSubs(subsRaw)
       });
+      
+      globalEpisodeIndex++;
     }
 
     return {
