@@ -56,9 +56,9 @@ exports.handler = async (event, context) => {
   // Token expiration (24 hours from now)
   const expirationTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60);
   
-  // Generate the signature
-  // Format: libraryId + securityKey + expirationTime + videoId
-  const signatureString = `${LIBRARY_ID}${SECURITY_KEY}${expirationTime}${videoId}`;
+  // Generate the signature for Bunny Stream Embed
+  // Algorithm: SHA256(securityKey + videoId + expirationTime)
+  const signatureString = `${SECURITY_KEY}${videoId}${expirationTime}`;
   const signature = crypto
     .createHash('sha256')
     .update(signatureString)
