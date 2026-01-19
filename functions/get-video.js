@@ -21,132 +21,88 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Read catalog files
-    const catalogPath = path.join(__dirname, "data", "catalog.txt");
-    const seriesPath = path.join(__dirname, "data", "series.txt");
-    const foreignSeriesPath = path.join(__dirname, "data", "foreign-series.txt");
+    // Call the catalog function to get all data
+    const catalogPath = '/.netlify/functions/catalog';
+    const foreignPath = '/.netlify/functions/foreignSeries';
     
-    let catalogText = "";
-    let seriesText = "";
-    let foreignSeriesText = "";
+    // Fetch catalog data (movies + series)
+    let movies = [];
+    let series = [];
+    let foreign = [];
     
-    if (fs.existsSync(catalogPath)) {
-      catalogText = fs.readFileSync(catalogPath, "utf8");
-    }
-    if (fs.existsSync(seriesPath)) {
-      seriesText = fs.readFileSync(seriesPath, "utf8");
-    }
-    if (fs.existsSync(foreignSeriesPath)) {
-      foreignSeriesText = fs.readFileSync(foreignSeriesPath, "utf8");
-    }
-
-    // Parse movies
-    const movies = catalogText
-      .split("\n")
-      .filter(line => line.trim())
-      .map((line, index) => {
-        const parts = line.split("|").map(p => p.trim());
-        return {
-          id: `movie_${index}`,
-          type: 'movie',
-          title: parts[0] || "",
-          url: parts[1] || "",
-          poster: parts[2] || ""
-        };
+    try {
+      // Read from catalog function
+      const catalogUrl = `${process.env.SITE_URL || 'http://localhost:8888'}${catalogPath}`;
+      const catalogRes = await fetch(catalogUrl, {
+        headers: event.headers
       });
-
-    // Parse series (Arabic)
-    const seriesMap = new Map();
-    seriesText
-      .split("\n")
-      .filter(line => line.trim())
-      .forEach((line, index) => {
-        const parts = line.split("|").map(p => p.trim());
-        const seriesName = parts[0] || "";
-        const episodeName = parts[1] || "";
-        const url = parts[2] || "";
-        const poster = parts[3] || "";
-        const genre = parts[4] || "";
-
-        if (!seriesMap.has(seriesName)) {
-          seriesMap.set(seriesName, {
-            id: `series_${seriesMap.size}`,
-            type: 'series',
-            title: seriesName,
-            poster: poster,
-            genre: genre,
-            episodes: []
-          });
+      
+      if (catalogRes.ok) {
+        const catalogData = await catalogRes.json();
+        if (catalogData && typeof catalogData === 'object') {
+          movies = Array.isArray(catalogData.movies) ? catalogData.movies : [];
+          series = Array.isArray(catalogData.series) ? catalogData.series : [];
         }
-
-        seriesMap.get(seriesName).episodes.push({
-          id: `episode_${index}`,
-          name: episodeName,
-          url: url
-        });
-      });
-
-    // Parse foreign series
-    const foreignSeriesMap = new Map();
-    foreignSeriesText
-      .split("\n")
-      .filter(line => line.trim())
-      .forEach((line, index) => {
-        const parts = line.split("|").map(p => p.trim());
-        const seriesName = parts[0] || "";
-        const episodeName = parts[1] || "";
-        const url = parts[2] || "";
-        const poster = parts[3] || "";
-        const genre = parts[4] || "";
-
-        if (!foreignSeriesMap.has(seriesName)) {
-          foreignSeriesMap.set(seriesName, {
-            id: `foreign_series_${foreignSeriesMap.size}`,
-            type: 'foreign_series',
-            title: seriesName,
-            poster: poster,
-            genre: genre,
-            episodes: []
-          });
-        }
-
-        foreignSeriesMap.get(seriesName).episodes.push({
-          id: `foreign_episode_${index}`,
-          name: episodeName,
-          url: url
-        });
-      });
-
-    const series = Array.from(seriesMap.values());
-    const foreignSeries = Array.from(foreignSeriesMap.values());
+      }
+    } catch (e) {
+      console.error('Error fetching catalog:', e);
+    }
     
+    try {
+      // Read from foreignSeries function
+      const foreignUrl = `${process.env.SITE_URL || 'http://localhost:8888'}${foreignPath}`;
+      const foreignRes = await fetch(foreignUrl, {
+        headers: event.headers
+      });
+      
+      if (foreignRes.ok) {
+        const foreignData = await foreignRes.json();
+        foreign = Array.isArray(foreignData) ? foreignData : [];
+      }
+    } catch (e) {
+      console.error('Error fetching foreign series:', e);
+    }
+
     // Find the requested video by ID
     let video = null;
     
-    // Check movies
-    video = movies.find(m => m.id === id);
+    // Check movies (id starts with m_)
+    if (id.startsWith('m_')) {
+      video = movies.find(m => m.id === id);
+      if (video) {
+        video.type = 'movie';
+      }
+    }
     
-    // Check Arabic series episodes
-    if (!video) {
+    // Check series episodes (id starts with e_)
+    if (!video && id.startsWith('e_')) {
       for (const s of series) {
-        video = s.episodes.find(ep => ep.id === id);
-        if (video) {
-          video.title = `${s.title} - ${video.name}`;
-          video.poster = s.poster;
-          video.type = 'episode';
+        const episode = (s.episodes || []).find(ep => ep.id === id);
+        if (episode) {
+          video = {
+            id: episode.id,
+            title: `${s.title} - ${episode.title}`,
+            url: episode.url,
+            poster: s.image,
+            type: 'episode'
+          };
           break;
         }
       }
     }
-
-    // Check foreign series episodes
-    if (!video) {
-      for (const s of foreignSeries) {
-        video = s.episodes.find(ep => ep.id === id);
-        if (video) {
-          video.title = `${s.title} - ${video.name}`;
-          video.poster = s.poster;
-          video.type = 'foreign_episode';
+    
+    // Check foreign series episodes (id starts with e_)
+    if (!video && id.startsWith('e_')) {
+      for (const s of foreign) {
+        const episode = (s.episodes || []).find(ep => ep.id === id);
+        if (episode) {
+          video = {
+            id: episode.id,
+            title: `${s.title} - ${episode.title}`,
+            url: episode.url,
+            poster: s.image,
+            type: 'foreign_episode'
+          };
           break;
         }
       }
@@ -160,8 +116,11 @@ exports.handler = async (event) => {
     }
 
     // Determine if it's a Bunny video
+    // Check if URL is a Bunny embed URL OR just a GUID (32-36 chars with dashes)
+    const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(video.url);
     const isBunny = video.url.includes('player.mediadelivery.net') || 
-                    video.url.includes('iframe.mediadelivery.net');
+                    video.url.includes('iframe.mediadelivery.net') ||
+                    isBunnyGuid;
 
     return {
       statusCode: 200,
@@ -169,7 +128,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         title: video.title,
         url: video.url,
-        poster: video.poster,
+        poster: video.poster || video.image,
         type: isBunny ? 'bunny' : 'hls'
       })
     };
