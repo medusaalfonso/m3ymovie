@@ -84,6 +84,7 @@ exports.handler = async (event) => {
             title: `${s.title} - ${episode.title}`,
             url: episode.url,
             poster: s.image,
+            subs: episode.subs || [],
             type: 'episode'
           };
           break;
@@ -101,6 +102,7 @@ exports.handler = async (event) => {
             title: `${s.title} - ${episode.title}`,
             url: episode.url || episode.hlsUrl, // Support both field names
             poster: s.image,
+            subs: episode.subs || [],
             type: 'foreign_episode'
           };
           break;
@@ -129,6 +131,7 @@ exports.handler = async (event) => {
         title: video.title,
         url: video.url,
         poster: video.poster || video.image,
+        subs: video.subs || [],
         type: isBunny ? 'bunny' : 'hls'
       })
     };
