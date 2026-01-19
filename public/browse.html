@@ -426,9 +426,9 @@
     modalTitle.textContent = title;
     modalEpisodes.innerHTML = "";
 
-    episodes.forEach((ep, idx) => {
+    episodes.forEach((ep) => {
       const epTitle = safeText(ep.title || ep.ep || "حلقة");
-      const episodeId = isForeign ? `foreign_episode_${ep.globalIndex || idx}` : `episode_${ep.globalIndex || idx}`;
+      const episodeId = ep.id; // Use the existing ID from API
       const subs = Array.isArray(ep.subs) ? ep.subs : [];
 
       const el = document.createElement("div");
@@ -617,25 +617,15 @@
     const data = await res.json();
 
     if (data && typeof data === "object" && !Array.isArray(data)) {
-      state.movies = Array.isArray(data.movies) ? data.movies.map((m, idx) => ({...m, id: `movie_${idx}`})) : [];
-      state.series = Array.isArray(data.series) ? data.series.map((s, idx) => {
-        // Add globalIndex to each episode for consistent IDs
-        let globalEpisodeIndex = 0;
-        return {
-          ...s,
-          id: `series_${idx}`,
-          episodes: (s.episodes || []).map(ep => ({
-            ...ep,
-            globalIndex: globalEpisodeIndex++
-          }))
-        };
-      }) : [];
+      // Use the existing IDs from the API response
+      state.movies = Array.isArray(data.movies) ? data.movies : [];
+      state.series = Array.isArray(data.series) ? data.series : [];
       return;
     }
 
     const arr = Array.isArray(data) ? data : [];
-    state.movies = arr.filter(x => x.title && x.url).map((m, idx) => ({...m, id: `movie_${idx}`}));
-    state.series = arr.filter(x => x.seriesTitle || x.ep).map((s, idx) => ({...s, id: `series_${idx}`}));
+    state.movies = arr.filter(x => x.title && x.url);
+    state.series = arr.filter(x => x.seriesTitle || x.ep);
   }
 
   async function loadForeignSeries(){
@@ -644,16 +634,8 @@
     if (!res.ok) throw new Error("foreignSeries failed");
     const data = await res.json();
     
-    // Add globalIndex to each episode for consistent IDs
-    let globalEpisodeIndex = 0;
-    state.foreign = Array.isArray(data) ? data.map((s, idx) => ({
-      ...s,
-      id: `foreign_series_${idx}`,
-      episodes: (s.episodes || []).map(ep => ({
-        ...ep,
-        globalIndex: globalEpisodeIndex++
-      }))
-    })) : [];
+    // Use the existing IDs from the API response
+    state.foreign = Array.isArray(data) ? data : [];
   }
 
   // ----- Render -----
