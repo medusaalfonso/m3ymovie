@@ -91,15 +91,15 @@ exports.handler = async (event) => {
       }
     }
     
-    // Check foreign series episodes (id starts with e_)
-    if (!video && id.startsWith('e_')) {
+    // Check foreign series episodes (id starts with fe_)
+    if (!video && id.startsWith('fe_')) {
       for (const s of foreign) {
         const episode = (s.episodes || []).find(ep => ep.id === id);
         if (episode) {
           video = {
             id: episode.id,
             title: `${s.title} - ${episode.title}`,
-            url: episode.url,
+            url: episode.url || episode.hlsUrl, // Support both field names
             poster: s.image,
             type: 'foreign_episode'
           };
