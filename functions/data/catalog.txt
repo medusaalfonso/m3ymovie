@@ -252,7 +252,7 @@
 فوكك منى | https://content.shofha.com/shofhacms/getSourceFile?rshosamah=85863 | https://resources.shofha.com:8081/Files/Images/cover/web/Fokak_Meny.webp
 تك تك بوم | https://content.shofha.com/shofhacms/getSourceFile?rshosamah=85864 | https://resources.shofha.com:8081/Files/Images/cover/web/Tak_Tak_Boom.webp
 حوش اللى وقع منك | https://content.shofha.com/shofhacms/getSourceFile?rshosamah=86067 | https://resources.shofha.com:8081/Files/Images/cover/web/Hosh_Elly_Weea_Menak.webp
-وين ياخذنا ريح | https://player.mediadelivery.net/embed/580777/3eb7f00d-69b6-4893-81c3-428f3b40a3b0 | https://images.ctfassets.net/22n7d68fswlw/3scnKoQ2e0lIrzgKhJf4LG/ffd38dfa04a23d1dc81629df5a989a76/Where-The-Wind-Comes-From_Poster.jpg | أفلام تونسية
-صاحبك رجل 2 الجزء الأول  | https://player.mediadelivery.net/embed/580777/555b2324-9fd6-4ce6-a09c-85f4c48c5fdb | https://cinematunisien.com/wp-content/uploads/2025/12/Sahbek-rajel-2-band-1-678x381.jpg | أفلام تونسية
-صاحبك راجل 2 الجزء الثاني | https://player.mediadelivery.net/embed/580777/323c75ff-4c04-4a4a-b95a-f1f778f3ef40 | https://cinematunisien.com/wp-content/uploads/2025/12/Sahbek-rajel-2-band-1-678x381.jpg | أفلام تونسية
-صاحبك راجل 2 الجزء الثالث  | https://player.mediadelivery.net/embed/580777/db8ef670-41b8-4392-a903-a08bcb1a6b97 | https://cinematunisien.com/wp-content/uploads/2025/12/Sahbek-rajel-2-band-1-678x381.jpg | أفلام تونسية
+وين ياخذنا ريح | 3eb7f00d-69b6-4893-81c3-428f3b40a3b0 | https://images.ctfassets.net/22n7d68fswlw/3scnKoQ2e0lIrzgKhJf4LG/ffd38dfa04a23d1dc81629df5a989a76/Where-The-Wind-Comes-From_Poster.jpg | أفلام تونسية
+صاحبك رجل 2 الجزء الأول  | 555b2324-9fd6-4ce6-a09c-85f4c48c5fdb | https://cinematunisien.com/wp-content/uploads/2025/12/Sahbek-rajel-2-band-1-678x381.jpg | أفلام تونسية
+صاحبك راجل 2 الجزء الثاني | 323c75ff-4c04-4a4a-b95a-f1f778f3ef40 | https://cinematunisien.com/wp-content/uploads/2025/12/Sahbek-rajel-2-band-1-678x381.jpg | أفلام تونسية
+صاحبك راجل 2 الجزء الثالث  | db8ef670-41b8-4392-a903-a08bcb1a6b97 | https://cinematunisien.com/wp-content/uploads/2025/12/Sahbek-rajel-2-band-1-678x381.jpg | أفلام تونسية
