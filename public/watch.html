@@ -216,14 +216,9 @@
   </div>
 
 <script>
-(function(){
+(async function(){
   const qs = new URLSearchParams(location.search);
-
-  const type   = (qs.get("type") || "").toLowerCase();  // hls | bunny | ...
-  const src    = qs.get("src") || "";
-  const title  = qs.get("title") || "المشاهدة";
-  const poster = qs.get("poster") || "";
-  const subkey = qs.get("subkey") || ""; // (optional) if you store subs in localStorage
+  const videoId = qs.get("id");
 
   const elTitle = document.getElementById("pageTitle");
   const elHint  = document.getElementById("hint");
@@ -233,215 +228,169 @@
   const overlayPlay = document.getElementById("overlayPlay");
   const subsRow = document.getElementById("subsRow");
 
-  elTitle.textContent = title;
-
-  // Helper: safe decode for JSON passed in URL (if you ever use it)
-  function safeJsonParse(str){
-    try { return JSON.parse(str); } catch(e){ return null; }
-  }
-
-  // Subtitles come from 2 possible places:
-  // 1) URL param "subs" as JSON (optional)
-  // 2) localStorage by subkey (what your URL currently uses)
-  let subs = [];
-  const subsParam = qs.get("subs");
-  if (subsParam){
-    const parsed = safeJsonParse(decodeURIComponent(subsParam));
-    if (Array.isArray(parsed)) subs = parsed;
-  } else if (subkey){
-    try{
-      const stored = localStorage.getItem(subkey);
-      const parsed = stored ? JSON.parse(stored) : null;
-      if (Array.isArray(parsed)) subs = parsed;
-    } catch(e){}
-  }
-
-  // Decide if Bunny embed
-  const isBunnyEmbed = type === "bunny" || src.includes("player.mediadelivery.net/embed/") || src.includes("iframe.mediadelivery.net/embed/");
-
-  // =========================
-  // Bunny Player (iframe) with Token Authentication
-  // =========================
-  if (isBunnyEmbed){
-    frame.style.display = "block";
-    video.style.display = "none";
-    overlay.classList.add("show");
-    elHint.textContent = "جاري تحميل الفيديو...";
-
-    // Extract video ID from src (either full embed URL or just the GUID)
-    let videoId = src;
-    
-    // If src is already a full embed URL, extract the video ID
-    const embedMatch = src.match(/embed\/(\d+)\/([a-f0-9\-]+)/i);
-    if (embedMatch) {
-      videoId = embedMatch[2]; // Get the GUID part
-    }
-
-    // Request token from backend
-    async function loadBunnyVideo(videoId) {
-      try {
-        const response = await fetch('/.netlify/functions/bunny-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoId })
-        });
-
-        if (!response.ok) {
-          throw new Error('فشل في الحصول على توكن الفيديو');
-        }
-
-        const { token, expires, libraryId } = await response.json();
-        
-        // Build the authenticated iframe URL
-        const iframeSrc = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?token=${token}&expires=${expires}&autoplay=true&preload=true`;
-        
-        frame.src = iframeSrc;
-        overlay.classList.remove("show");
-        elHint.textContent = "";
-        
-      } catch (error) {
-        console.error('خطأ في تحميل الفيديو:', error);
-        elHint.textContent = "خطأ في تحميل الفيديو";
-        overlay.classList.remove("show");
-        alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
-      }
-    }
-
-    loadBunnyVideo(videoId);
-    subsRow.style.display = "none";
+  if (!videoId) {
+    elHint.textContent = "معرف الفيديو غير موجود";
     return;
   }
 
-  // =========================
-  // HLS / MP4 video (video tag)
-  // =========================
-  video.style.display = "block";
-  frame.style.display = "none";
+  // Show loading
+  overlay.classList.add("show");
+  elHint.textContent = "جاري التحميل...";
 
-  if (poster) video.poster = poster;
+  try {
+    // Fetch video data from backend
+    const response = await fetch(`/.netlify/functions/get-video?id=${videoId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to load video');
+    }
 
-  // Remove any old tracks (important when navigating between episodes)
-  function clearTracks(){
-    const tracks = video.querySelectorAll("track");
-    tracks.forEach(t => t.remove());
-  }
+    const videoData = await response.json();
+    const { title, url, poster, type } = videoData;
 
-  // Add VTT tracks (this makes the browser request the VTT)
-  function addTracks(subs){
-    clearTracks();
-    if (!Array.isArray(subs) || subs.length === 0){
+    elTitle.textContent = title;
+
+    // Decide if Bunny embed
+    // Check if it's a full Bunny URL or just a GUID
+    const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(url);
+    const isBunnyEmbed = type === "bunny" || isBunnyGuid;
+
+    // =========================
+    // Bunny Player (iframe) with Token Authentication
+    // =========================
+    if (isBunnyEmbed){
+      frame.style.display = "block";
+      video.style.display = "none";
+
+      // Extract video ID from url (either full embed URL or just the GUID)
+      let bunnyVideoId = url;
+      
+      // If url is a full embed URL, extract the video ID
+      const embedMatch = url.match(/embed\/(\d+)\/([a-f0-9\-]+)/i);
+      if (embedMatch) {
+        bunnyVideoId = embedMatch[2];
+      }
+      // Otherwise, url is already just the GUID, use it as is
+
+      // Request token from backend
+      async function loadBunnyVideo(videoId) {
+        try {
+          const tokenResponse = await fetch('/.netlify/functions/bunny-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoId })
+          });
+
+          if (!tokenResponse.ok) {
+            throw new Error('فشل في الحصول على توكن الفيديو');
+          }
+
+          const { token, expires, libraryId } = await tokenResponse.json();
+          
+          // Build the authenticated iframe URL
+          const iframeSrc = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?token=${token}&expires=${expires}&autoplay=true&preload=true`;
+          
+          frame.src = iframeSrc;
+          overlay.classList.remove("show");
+          elHint.textContent = "";
+          
+        } catch (error) {
+          console.error('خطأ في تحميل الفيديو:', error);
+          elHint.textContent = "خطأ في تحميل الفيديو";
+          overlay.classList.remove("show");
+          alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
+        }
+      }
+
+      loadBunnyVideo(bunnyVideoId);
       subsRow.style.display = "none";
       return;
     }
 
-    subsRow.style.display = "flex";
-    subsRow.innerHTML = "";
+    // =========================
+    // HLS / MP4 video (video tag)
+    // =========================
+    video.style.display = "block";
+    frame.style.display = "none";
 
-    // Show a small hint pill list (not a debug URL)
-    subs.forEach((s, idx) => {
-      const pill = document.createElement("div");
-      pill.className = "pill";
-      pill.textContent = s.label || ("SUB " + (idx + 1));
-      subsRow.appendChild(pill);
-    });
+    if (poster) video.poster = poster;
 
-    // Create actual <track> elements
-    subs.forEach((s, idx) => {
-      if (!s || !s.url) return;
-
-      const track = document.createElement("track");
-      track.kind = "subtitles";
-      track.label = s.label || ("SUB " + (idx + 1));
-      // Use lang from json: "s1", "s2" ... (valid enough)
-      track.srclang = (s.lang || ("s" + (idx + 1))).toString().toLowerCase();
-      track.src = "/.netlify/functions/subtitleProxy?url=" + encodeURIComponent(s.url);
-
-      // Only first one default (so user sees it in CC menu)
-      if (idx === 0) track.default = true;
-
-      video.appendChild(track);
-    });
-  }
-
-  addTracks(subs);
-
-  // Load source with HLS.js if needed
-  let hls = null;
-  function loadVideoSource(url){
-    // if .m3u8 -> HLS.js or native (Safari)
-    const isM3U8 = url.includes(".m3u8") || type === "hls";
-
-    if (hls){
-      try{ hls.destroy(); }catch(e){}
-      hls = null;
+    // Remove any old tracks
+    function clearTracks(){
+      const tracks = video.querySelectorAll("track");
+      tracks.forEach(t => t.remove());
     }
+    clearTracks();
 
-    if (isM3U8){
-      if (video.canPlayType("application/vnd.apple.mpegurl")){
-        // Safari / iOS native
-        video.src = url;
-      } else if (window.Hls && Hls.isSupported()){
-        hls = new Hls({
-          // keep default; you can tune later if you want
-          enableWorker: true
-        });
-        hls.loadSource(url);
-        hls.attachMedia(video);
-      } else {
-        // fallback: set src (may not work in many browsers)
-        video.src = url;
-      }
-    } else {
-      // mp4 direct
-      video.src = url;
-    }
-  }
+    // Load source with HLS.js if needed
+    let hls = null;
+    function loadVideoSource(url){
+      const isM3U8 = url.includes(".m3u8") || type === "hls";
 
-  loadVideoSource(src);
-
-  // Clean hint line (NO raw URL)
-  elHint.textContent = "";
-
-  // =========================
-  // Autoplay (no forced mute)
-  // =========================
-  async function tryAutoplay(){
-    // Some browsers block autoplay with sound.
-    // We try with sound. If it fails, show our overlay button.
-    try{
-      await video.play();
-      overlay.classList.remove("show");
-    }catch(err){
-      overlay.classList.add("show");
-    }
-  }
-
-  // Try after metadata/manifest is ready
-  video.addEventListener("loadedmetadata", tryAutoplay, { once:true });
-
-  // If using HLS.js, also try after manifest parsed
-  if (window.Hls && Hls.isSupported()){
-    // we might not have hls immediately, so poll briefly
-    const t0 = Date.now();
-    const timer = setInterval(() => {
       if (hls){
-        clearInterval(timer);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          tryAutoplay();
-        });
-      } else if (Date.now() - t0 > 2000){
-        clearInterval(timer);
+        try{ hls.destroy(); }catch(e){}
+        hls = null;
       }
-    }, 50);
-  }
 
-  overlayPlay.addEventListener("click", async () => {
-    try{
-      // user gesture => should allow play with sound
-      await video.play();
-      overlay.classList.remove("show");
-    }catch(e){}
-  });
+      if (isM3U8){
+        if (video.canPlayType("application/vnd.apple.mpegurl")){
+          video.src = url;
+        } else if (window.Hls && Hls.isSupported()){
+          hls = new Hls({
+            enableWorker: true
+          });
+          hls.loadSource(url);
+          hls.attachMedia(video);
+        } else {
+          video.src = url;
+        }
+      } else {
+        video.src = url;
+      }
+    }
+
+    loadVideoSource(url);
+    elHint.textContent = "";
+
+    // Autoplay
+    async function tryAutoplay(){
+      try{
+        await video.play();
+        overlay.classList.remove("show");
+      }catch(err){
+        overlay.classList.add("show");
+      }
+    }
+
+    video.addEventListener("loadedmetadata", tryAutoplay, { once:true });
+
+    if (window.Hls && Hls.isSupported()){
+      const t0 = Date.now();
+      const timer = setInterval(() => {
+        if (hls){
+          clearInterval(timer);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            tryAutoplay();
+          });
+        } else if (Date.now() - t0 > 2000){
+          clearInterval(timer);
+        }
+      }, 50);
+    }
+
+    overlayPlay.addEventListener("click", async () => {
+      try{
+        await video.play();
+        overlay.classList.remove("show");
+      }catch(e){}
+    });
+
+  } catch (error) {
+    console.error('Error loading video:', error);
+    elHint.textContent = "خطأ في تحميل الفيديو";
+    overlay.classList.remove("show");
+    alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
+  }
 
 })();
 </script>
