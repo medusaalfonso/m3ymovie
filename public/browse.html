@@ -422,13 +422,13 @@
     if (e.key === "Escape") hideModal();
   });
 
-  function showModal(title, episodes, poster, seriesName){
+  function showModal(title, episodes, poster, seriesName, isForeign = false){
     modalTitle.textContent = title;
     modalEpisodes.innerHTML = "";
 
-    episodes.forEach((ep) => {
+    episodes.forEach((ep, idx) => {
       const epTitle = safeText(ep.title || ep.ep || "حلقة");
-      const hlsUrl = ep.hlsUrl || ep.url || ep.hls || ep.src;
+      const episodeId = isForeign ? `foreign_episode_${ep.globalIndex || idx}` : `episode_${ep.globalIndex || idx}`;
       const subs = Array.isArray(ep.subs) ? ep.subs : [];
 
       const el = document.createElement("div");
@@ -442,20 +442,7 @@
       `;
 
       el.addEventListener("click", () => {
-        if (!hlsUrl) return;
-
-        const subkey = "subs_" + Date.now() + "_" + Math.random().toString(16).slice(2);
-        localStorage.setItem(subkey, JSON.stringify(subs));
-
-        const titleFull = seriesName ? `${seriesName} - ${epTitle}` : epTitle;
-        const url =
-          `watch.html?type=hls` +
-          `&src=${encodeURIComponent(hlsUrl)}` +
-          `&title=${encodeURIComponent(titleFull)}` +
-          `&poster=${encodeURIComponent(poster || "")}` +
-          `&subkey=${encodeURIComponent(subkey)}`;
-
-        location.href = url;
+        location.href = `watch.html?id=${encodeURIComponent(episodeId)}`;
       });
 
       modalEpisodes.appendChild(el);
@@ -630,14 +617,25 @@
     const data = await res.json();
 
     if (data && typeof data === "object" && !Array.isArray(data)) {
-      state.movies = Array.isArray(data.movies) ? data.movies : [];
-      state.series = Array.isArray(data.series) ? data.series : [];
+      state.movies = Array.isArray(data.movies) ? data.movies.map((m, idx) => ({...m, id: `movie_${idx}`})) : [];
+      state.series = Array.isArray(data.series) ? data.series.map((s, idx) => {
+        // Add globalIndex to each episode for consistent IDs
+        let globalEpisodeIndex = 0;
+        return {
+          ...s,
+          id: `series_${idx}`,
+          episodes: (s.episodes || []).map(ep => ({
+            ...ep,
+            globalIndex: globalEpisodeIndex++
+          }))
+        };
+      }) : [];
       return;
     }
 
     const arr = Array.isArray(data) ? data : [];
-    state.movies = arr.filter(x => x.title && x.url);
-    state.series = arr.filter(x => x.seriesTitle || x.ep);
+    state.movies = arr.filter(x => x.title && x.url).map((m, idx) => ({...m, id: `movie_${idx}`}));
+    state.series = arr.filter(x => x.seriesTitle || x.ep).map((s, idx) => ({...s, id: `series_${idx}`}));
   }
 
   async function loadForeignSeries(){
@@ -645,7 +643,17 @@
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("foreignSeries failed");
     const data = await res.json();
-    state.foreign = Array.isArray(data) ? data : [];
+    
+    // Add globalIndex to each episode for consistent IDs
+    let globalEpisodeIndex = 0;
+    state.foreign = Array.isArray(data) ? data.map((s, idx) => ({
+      ...s,
+      id: `foreign_series_${idx}`,
+      episodes: (s.episodes || []).map(ep => ({
+        ...ep,
+        globalIndex: globalEpisodeIndex++
+      }))
+    })) : [];
   }
 
   // ----- Render -----
@@ -671,12 +679,11 @@
   }
 
   function renderFilms(tunisianOnly){
-    // نفس فلترة ملفك السابق (مع Pagination فقط)
     const all = state.movies
       .filter(m => matchesQuery(m.title))
       .filter(m => {
         const cat = safeText(m.category);
-        if (!tunisianOnly) return true; // تبويب "الأفلام" يعرض كل الأفلام العادية فقط بالفلتر تحت
+        if (!tunisianOnly) return true;
         return cat === "أفلام تونسية";
       })
       .filter(m => tunisianOnly ? safeText(m.category) === "أفلام تونسية" : safeText(m.category) === "أفلام");
@@ -691,7 +698,7 @@
     slice.forEach((m) => {
       const titleTxt = safeText(m.title);
       const image = safeText(m.image);
-      const url = safeText(m.url);
+      const movieId = m.id;
 
       g.appendChild(card({
         title: titleTxt,
@@ -699,24 +706,7 @@
         badge: tunisianOnly ? "تونسية" : "فيلم",
         metaPills: [ safeText(m.category) || "فيلم" ],
         onClick: () => {
-          if (!url) return;
-
-          if (isBunnyEmbed(url)) {
-            const go =
-              `watch.html?type=bunny` +
-              `&src=${encodeURIComponent(url)}` +
-              `&title=${encodeURIComponent(titleTxt)}` +
-              `&poster=${encodeURIComponent(image)}`;
-            location.href = go;
-            return;
-          }
-
-          const go =
-            `watch.html?type=redirect` +
-            `&src=${encodeURIComponent(url)}` +
-            `&title=${encodeURIComponent(titleTxt)}` +
-            `&poster=${encodeURIComponent(image)}`;
-          location.href = go;
+          location.href = `watch.html?id=${encodeURIComponent(movieId)}`;
         }
       }));
     });
@@ -749,7 +739,7 @@
         image,
         badge: "مسلسل",
         metaPills: [`${episodes.length} حلقة`],
-        onClick: () => showModal(seriesName, episodes, image, seriesName)
+        onClick: () => showModal(seriesName, episodes, image, seriesName, false)
       }));
     });
 
@@ -778,7 +768,7 @@
         image,
         badge: "أجنبي",
         metaPills: [`${episodes.length} حلقة`],
-        onClick: () => showModal(seriesName, episodes, image, seriesName)
+        onClick: () => showModal(seriesName, episodes, image, seriesName, true)
       }));
     });
 
