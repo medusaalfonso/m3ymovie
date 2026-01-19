@@ -315,16 +315,57 @@
 
     if (poster) video.poster = poster;
 
-    // Remove any old tracks
+    // Remove any old tracks (important when navigating between episodes)
     function clearTracks(){
       const tracks = video.querySelectorAll("track");
       tracks.forEach(t => t.remove());
     }
-    clearTracks();
+
+    // Add VTT tracks (this makes the browser request the VTT)
+    function addTracks(subs){
+      clearTracks();
+      if (!Array.isArray(subs) || subs.length === 0){
+        subsRow.style.display = "none";
+        return;
+      }
+
+      subsRow.style.display = "flex";
+      subsRow.innerHTML = "";
+
+      // Show a small hint pill list (not a debug URL)
+      subs.forEach((s, idx) => {
+        const pill = document.createElement("div");
+        pill.className = "pill";
+        pill.textContent = s.label || ("SUB " + (idx + 1));
+        subsRow.appendChild(pill);
+      });
+
+      // Create actual <track> elements
+      subs.forEach((s, idx) => {
+        if (!s || !s.url) return;
+
+        const track = document.createElement("track");
+        track.kind = "subtitles";
+        track.label = s.label || ("SUB " + (idx + 1));
+        // Use lang from json: "s1", "s2" ... (valid enough)
+        track.srclang = (s.lang || ("s" + (idx + 1))).toString().toLowerCase();
+        track.src = "/.netlify/functions/subtitleProxy?url=" + encodeURIComponent(s.url);
+
+        // Only first one default (so user sees it in CC menu)
+        if (idx === 0) track.default = true;
+
+        video.appendChild(track);
+      });
+    }
+
+    // Check if video data has subs
+    const subs = Array.isArray(videoData.subs) ? videoData.subs : [];
+    addTracks(subs);
 
     // Load source with HLS.js if needed
     let hls = null;
     function loadVideoSource(url){
+      // if .m3u8 -> HLS.js or native (Safari)
       const isM3U8 = url.includes(".m3u8") || type === "hls";
 
       if (hls){
@@ -334,26 +375,36 @@
 
       if (isM3U8){
         if (video.canPlayType("application/vnd.apple.mpegurl")){
+          // Safari / iOS native
           video.src = url;
         } else if (window.Hls && Hls.isSupported()){
           hls = new Hls({
+            // keep default; you can tune later if you want
             enableWorker: true
           });
           hls.loadSource(url);
           hls.attachMedia(video);
         } else {
+          // fallback: set src (may not work in many browsers)
           video.src = url;
         }
       } else {
+        // mp4 direct
         video.src = url;
       }
     }
 
     loadVideoSource(url);
+
+    // Clean hint line (NO raw URL)
     elHint.textContent = "";
 
-    // Autoplay
+    // =========================
+    // Autoplay (no forced mute)
+    // =========================
     async function tryAutoplay(){
+      // Some browsers block autoplay with sound.
+      // We try with sound. If it fails, show our overlay button.
       try{
         await video.play();
         overlay.classList.remove("show");
@@ -362,9 +413,12 @@
       }
     }
 
+    // Try after metadata/manifest is ready
     video.addEventListener("loadedmetadata", tryAutoplay, { once:true });
 
+    // If using HLS.js, also try after manifest parsed
     if (window.Hls && Hls.isSupported()){
+      // we might not have hls immediately, so poll briefly
       const t0 = Date.now();
       const timer = setInterval(() => {
         if (hls){
@@ -380,6 +434,7 @@
 
     overlayPlay.addEventListener("click", async () => {
       try{
+        // user gesture => should allow play with sound
         await video.play();
         overlay.classList.remove("show");
       }catch(e){}
