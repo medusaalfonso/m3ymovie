@@ -634,17 +634,8 @@
     if (!res.ok) throw new Error("foreignSeries failed");
     const data = await res.json();
     
-    // Generate IDs for foreign series since the API doesn't provide them
-    let globalEpisodeIndex = 0;
-    state.foreign = Array.isArray(data) ? data.map((s, seriesIdx) => ({
-      ...s,
-      id: `fs_${seriesIdx}`, // foreign series ID
-      episodes: (s.episodes || []).map((ep, epIdx) => ({
-        ...ep,
-        id: `fe_${globalEpisodeIndex++}`, // foreign episode ID
-        url: ep.hlsUrl || ep.url, // Normalize url field
-      }))
-    })) : [];
+    // Use the IDs from the API response
+    state.foreign = Array.isArray(data) ? data : [];
   }
 
   // ----- Render -----
