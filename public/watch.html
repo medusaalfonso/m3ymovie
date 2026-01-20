@@ -374,19 +374,49 @@
       }
 
       if (isM3U8){
+        // Use proxy for external HLS streams to avoid CORS issues
+        const proxiedUrl = `/.netlify/functions/hls-proxy?url=${encodeURIComponent(url)}`;
+        
         if (video.canPlayType("application/vnd.apple.mpegurl")){
-          // Safari / iOS native
+          // Safari / iOS native - try original URL first, fallback to proxy if needed
           video.src = url;
+          video.addEventListener('error', () => {
+            console.log('Direct playback failed, using proxy');
+            video.src = proxiedUrl;
+          }, { once: true });
         } else if (window.Hls && Hls.isSupported()){
           hls = new Hls({
-            // keep default; you can tune later if you want
-            enableWorker: true
+            enableWorker: true,
+            xhrSetup: function(xhr, url) {
+              // Add headers to help with CORS
+              xhr.withCredentials = false;
+            }
           });
-          hls.loadSource(url);
+          hls.loadSource(proxiedUrl);
           hls.attachMedia(video);
+          
+          hls.on(Hls.Events.ERROR, function(event, data) {
+            if (data.fatal) {
+              console.error('HLS error:', data);
+              switch(data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  console.log('Network error, attempting recovery...');
+                  hls.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  console.log('Media error, attempting recovery...');
+                  hls.recoverMediaError();
+                  break;
+                default:
+                  console.log('Fatal error, destroying HLS instance');
+                  hls.destroy();
+                  break;
+              }
+            }
+          });
         } else {
           // fallback: set src (may not work in many browsers)
-          video.src = url;
+          video.src = proxiedUrl;
         }
       } else {
         // mp4 direct
