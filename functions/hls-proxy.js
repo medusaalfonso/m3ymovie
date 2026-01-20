@@ -35,13 +35,23 @@ exports.handler = async (event) => {
     }
 
     const contentType = response.headers.get('content-type') || 'application/vnd.apple.mpegurl';
-    let body = await response.text();
+    
+    // Read the body once based on content type
+    const isTextContent = contentType.includes('mpegurl') || 
+                          contentType.includes('m3u8') || 
+                          contentType.includes('text') ||
+                          url.includes('.m3u8');
 
-    // If it's a master playlist (m3u8), we need to rewrite URLs to go through our proxy
-    if (contentType.includes('mpegurl') || contentType.includes('m3u8') || url.includes('.m3u8')) {
+    let body;
+    let isBase64 = false;
+
+    if (isTextContent) {
+      // Text content (playlists)
+      body = await response.text();
+      
+      // Rewrite relative URLs in the playlist to go through our proxy
       const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
       
-      // Rewrite relative URLs in the playlist to absolute URLs through our proxy
       body = body.split('\n').map(line => {
         if (line.trim() && !line.startsWith('#')) {
           // It's a URL line
@@ -57,6 +67,11 @@ exports.handler = async (event) => {
         }
         return line;
       }).join('\n');
+    } else {
+      // Binary content (video segments)
+      const buffer = await response.arrayBuffer();
+      body = Buffer.from(buffer).toString('base64');
+      isBase64 = true;
     }
 
     return {
@@ -68,8 +83,8 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'public, max-age=300'
       },
-      body: contentType.includes('mpegurl') || contentType.includes('m3u8') ? body : Buffer.from(await response.arrayBuffer()).toString('base64'),
-      isBase64Encoded: !(contentType.includes('mpegurl') || contentType.includes('m3u8') || contentType.includes('text'))
+      body: body,
+      isBase64Encoded: isBase64
     };
 
   } catch (error) {
