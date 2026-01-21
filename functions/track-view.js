@@ -12,29 +12,49 @@ exports.handler = async (event) => {
   try {
     const { videoId, duration, action } = JSON.parse(event.body || '{}');
     
-    const { createClient } = require('@upstash/redis');
-    
-    const redis = createClient({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN
-    });
+    const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+    const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!REDIS_URL || !REDIS_TOKEN) {
+      console.log('Redis not configured, skipping analytics');
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: true })
+      };
+    }
+
+    // Helper function to call Redis REST API
+    async function redisCommand(command, ...args) {
+      const response = await fetch(`${REDIS_URL}/${command}/${args.join('/')}`, {
+        headers: {
+          'Authorization': `Bearer ${REDIS_TOKEN}`
+        }
+      });
+      return response.json();
+    }
 
     if (action === 'start') {
       // Increment total views
-      await redis.incr('analytics:totalViews');
+      await redisCommand('INCR', 'analytics:totalViews');
       
       // Track today's visitors (using IP or session)
       const todayKey = `analytics:visitors:${new Date().toISOString().split('T')[0]}`;
-      await redis.incr(todayKey);
-      await redis.expire(todayKey, 86400 * 7); // Keep for 7 days
+      await redisCommand('INCR', todayKey);
+      await redisCommand('EXPIRE', todayKey, 86400 * 7); // Keep for 7 days
       
       // Track video views
-      await redis.incr(`analytics:video:${videoId}:views`);
+      if (videoId) {
+        await redisCommand('INCR', `analytics:video:${videoId}:views`);
+      }
       
     } else if (action === 'progress' && duration) {
       // Add watch time (in seconds)
-      await redis.incrby('analytics:totalHours', Math.floor(duration));
-      await redis.incrby(`analytics:video:${videoId}:duration`, Math.floor(duration));
+      await redisCommand('INCRBY', 'analytics:totalHours', Math.floor(duration));
+      
+      if (videoId) {
+        await redisCommand('INCRBY', `analytics:video:${videoId}:duration`, Math.floor(duration));
+      }
     }
 
     return {
