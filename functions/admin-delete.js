@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
 
 function verifyAdmin(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
@@ -12,6 +10,16 @@ function verifyAdmin(authHeader) {
   } catch (e) {
     return false;
   }
+}
+
+async function redisCommand(command, ...args) {
+  const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+  const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  const response = await fetch(`${REDIS_URL}/${command}/${args.map(a => encodeURIComponent(a)).join('/')}`, {
+    headers: { 'Authorization': `Bearer ${REDIS_TOKEN}` }
+  });
+  return response.json();
 }
 
 exports.handler = async (event) => {
@@ -38,52 +46,54 @@ exports.handler = async (event) => {
       };
     }
 
-    // Determine file based on ID prefix
-    let filePath;
-    let lineIndex;
-    
-    if (id.startsWith('m_')) {
-      filePath = path.join(process.cwd(), 'functions/data/catalog.txt');
-      lineIndex = parseInt(id.substring(2));
-    } else if (id.startsWith('s_')) {
-      filePath = path.join(process.cwd(), 'functions/data/series.txt');
-      lineIndex = parseInt(id.substring(2));
-    } else if (id.startsWith('f_')) {
-      filePath = path.join(process.cwd(), 'functions/data/foreign-series.txt');
-      lineIndex = parseInt(id.substring(2));
-    } else {
+    // Can't delete file-based content (read-only)
+    if (id.includes('_file_')) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'Invalid ID format' })
+        body: JSON.stringify({ success: false, error: 'Cannot delete file-based content. Only Redis content can be deleted.' })
       };
     }
 
-    if (!fs.existsSync(filePath)) {
-      return {
-        statusCode: 404,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'File not found' })
-      };
+    // Delete based on ID prefix
+    if (id.startsWith('m_')) {
+      // Delete movie
+      await redisCommand('DEL', `movie:${id}`);
+      await redisCommand('SREM', 'catalog:movies', id);
+      
+    } else if (id.startsWith('e_')) {
+      // Delete episode
+      const epData = await redisCommand('HGETALL', `episode:${id}`);
+      
+      if (epData && epData.length > 0) {
+        let seriesId = null;
+        let isForeign = false;
+        
+        // Parse episode data
+        for (let i = 0; i < epData.length; i += 2) {
+          if (epData[i] === 'seriesId') seriesId = epData[i + 1];
+          if (epData[i] === 'type' && epData[i + 1] === 'foreign_episode') isForeign = true;
+        }
+        
+        if (seriesId) {
+          // Remove episode from series
+          await redisCommand('SREM', `series:${seriesId}:episodes`, id);
+          
+          // Check if series has no more episodes
+          const remainingEps = await redisCommand('SMEMBERS', `series:${seriesId}:episodes`);
+          
+          if (!remainingEps || remainingEps.length === 0) {
+            // Delete the series too
+            await redisCommand('DEL', `series:${seriesId}`);
+            const listKey = isForeign ? 'catalog:foreign' : 'catalog:series';
+            await redisCommand('SREM', listKey, seriesId);
+          }
+        }
+        
+        // Delete episode
+        await redisCommand('DEL', `episode:${id}`);
+      }
     }
-
-    // Read file
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const lines = content.split('\n');
-    
-    // Remove the line at index
-    if (lineIndex < 0 || lineIndex >= lines.length) {
-      return {
-        statusCode: 404,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'Content not found' })
-      };
-    }
-    
-    lines.splice(lineIndex, 1);
-    
-    // Write back
-    fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
 
     return {
       statusCode: 200,
