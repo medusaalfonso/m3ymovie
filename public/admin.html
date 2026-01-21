@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>لوحة التحكم</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:#0f172a;
+      --text:#e5e7eb;
+      --muted:#a1a1aa;
+      --border:rgba(255,255,255,.08);
+      --accent:#22c55e;
+      --danger:#ef4444;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, #05070d, var(--bg));
+      color:var(--text);
+      min-height:100vh;
+      padding:20px;
+    }
+    .container{max-width:1200px; margin:0 auto}
+    
+    /* Login Form */
+    .login-box{
+      max-width:400px;
+      margin:100px auto;
+      background:var(--panel);
+      padding:30px;
+      border-radius:var(--radius);
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+    }
+    .login-box h1{margin:0 0 20px; font-size:24px}
+    .login-box input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius:12px;
+      color:var(--text);
+      font-size:14px;
+    }
+    .login-box button{
+      width:100%;
+      padding:12px;
+      background:var(--accent);
+      border:none;
+      border-radius:12px;
+      color:#000;
+      font-weight:bold;
+      cursor:pointer;
+      margin-top:10px;
+    }
+    .login-box button:hover{opacity:.9}
+    .error{color:var(--danger); font-size:13px; margin-top:10px}
+    
+    /* Dashboard */
+    .dashboard{display:none}
+    .dashboard.active{display:block}
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:30px;
+      padding-bottom:20px;
+      border-bottom:1px solid var(--border);
+    }
+    .header h1{margin:0; font-size:28px}
+    .logout-btn{
+      padding:10px 20px;
+      background:var(--danger);
+      border:none;
+      border-radius:12px;
+      color:#fff;
+      cursor:pointer;
+    }
+    
+    .tabs{
+      display:flex;
+      gap:10px;
+      margin-bottom:20px;
+      border-bottom:1px solid var(--border);
+    }
+    .tab{
+      padding:12px 20px;
+      background:transparent;
+      border:none;
+      color:var(--muted);
+      cursor:pointer;
+      border-bottom:2px solid transparent;
+      font-size:14px;
+    }
+    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    
+    /* Stats Cards */
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+      gap:20px;
+      margin-bottom:30px;
+    }
+    .stat-card{
+      background:var(--panel);
+      padding:20px;
+      border-radius:var(--radius);
+      border:1px solid var(--border);
+    }
+    .stat-card h3{margin:0 0 10px; font-size:14px; color:var(--muted)}
+    .stat-card .value{font-size:32px; font-weight:bold; color:var(--accent)}
+    .stat-card .label{font-size:12px; color:var(--muted); margin-top:5px}
+    
+    /* Form */
+    .form-group{margin-bottom:20px}
+    .form-group label{display:block; margin-bottom:8px; font-size:14px; color:var(--muted)}
+    .form-group input, .form-group select, .form-group textarea{
+      width:100%;
+      padding:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius:12px;
+      color:var(--text);
+      font-size:14px;
+    }
+    .form-group textarea{min-height:100px; resize:vertical}
+    .btn{
+      padding:12px 24px;
+      background:var(--accent);
+      border:none;
+      border-radius:12px;
+      color:#000;
+      font-weight:bold;
+      cursor:pointer;
+      margin-top:10px;
+    }
+    .btn:hover{opacity:.9}
+    .btn-secondary{background:var(--panel); color:var(--text); border:1px solid var(--border)}
+    
+    /* Content List */
+    .content-list{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      overflow:hidden;
+    }
+    .content-item{
+      padding:15px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .content-item:last-child{border-bottom:none}
+    .content-item .info{flex:1}
+    .content-item .title{font-weight:bold; margin-bottom:5px}
+    .content-item .meta{font-size:12px; color:var(--muted)}
+    .content-item .actions{display:flex; gap:10px}
+    .content-item button{
+      padding:6px 12px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:12px;
+    }
+    .btn-delete{background:var(--danger); color:#fff}
+    .success-msg{
+      padding:12px;
+      background:rgba(34,197,94,.1);
+      border:1px solid rgba(34,197,94,.3);
+      border-radius:12px;
+      color:var(--accent);
+      margin-bottom:20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login Form -->
+  <div class="login-box" id="loginBox">
+    <h1>🔐 تسجيل الدخول</h1>
+    <input type="password" id="adminPassword" placeholder="كلمة المرور" />
+    <button onclick="login()">دخول</button>
+    <div class="error" id="loginError"></div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="container">
+      <div class="header">
+        <h1>⚡ لوحة التحكم</h1>
+        <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('stats')">الإحصائيات</button>
+        <button class="tab" onclick="showTab('upload')">رفع محتوى</button>
+        <button class="tab" onclick="showTab('manage')">إدارة المحتوى</button>
+      </div>
+
+      <!-- Stats Tab -->
+      <div class="tab-content active" id="statsTab">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>إجمالي المشاهدات</h3>
+            <div class="value" id="totalViews">0</div>
+            <div class="label">مشاهدة</div>
+          </div>
+          <div class="stat-card">
+            <h3>ساعات المشاهدة</h3>
+            <div class="value" id="totalHours">0</div>
+            <div class="label">ساعة</div>
+          </div>
+          <div class="stat-card">
+            <h3>الزوار اليوم</h3>
+            <div class="value" id="todayVisitors">0</div>
+            <div class="label">زائر</div>
+          </div>
+          <div class="stat-card">
+            <h3>إجمالي الأفلام</h3>
+            <div class="value" id="totalMovies">0</div>
+            <div class="label">فيلم</div>
+          </div>
+        </div>
+
+        <div class="content-list">
+          <div class="content-item">
+            <div class="info">
+              <div class="title">الأكثر مشاهدة هذا الأسبوع</div>
+              <div class="meta" id="topContent">جاري التحميل...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Tab -->
+      <div class="tab-content" id="uploadTab">
+        <div id="successMsg" class="success-msg" style="display:none"></div>
+        
+        <div class="form-group">
+          <label>نوع المحتوى</label>
+          <select id="contentType" onchange="toggleContentFields()">
+            <option value="movie">فيلم</option>
+            <option value="series">مسلسل (حلقة)</option>
+            <option value="foreign">مسلسل أجنبي (حلقة)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="categoryGroup">
+          <label>التصنيف</label>
+          <select id="category">
+            <option value="أفلام">أفلام</option>
+            <option value="أفلام تونسية">أفلام تونسية</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="seriesNameGroup" style="display:none">
+          <label>اسم المسلسل</label>
+          <input type="text" id="seriesName" placeholder="مثال: Breaking Bad" />
+        </div>
+
+        <div class="form-group">
+          <label>العنوان / رقم الحلقة</label>
+          <input type="text" id="title" placeholder="مثال: العصفور أو Episode 01" />
+        </div>
+
+        <div class="form-group">
+          <label>رابط الفيديو (HLS/m3u8) أو Bunny Video GUID</label>
+          <input type="text" id="videoUrl" placeholder="https://... أو 555b2324-9fd6-4ce6-a09c-85f4c48c5fdb" />
+        </div>
+
+        <div class="form-group">
+          <label>رابط الصورة</label>
+          <input type="text" id="posterUrl" placeholder="https://..." />
+        </div>
+
+        <div class="form-group" id="genreGroup" style="display:none">
+          <label>النوع (Genre)</label>
+          <input type="text" id="genre" placeholder="مثال: دراما، كوميديا" />
+        </div>
+
+        <div class="form-group">
+          <label>الترجمات (اختياري - كل رابط في سطر)</label>
+          <textarea id="subtitles" placeholder="https://example.com/sub1.vtt
+https://example.com/sub2.vtt"></textarea>
+        </div>
+
+        <button class="btn" onclick="uploadContent()">إضافة المحتوى</button>
+      </div>
+
+      <!-- Manage Tab -->
+      <div class="tab-content" id="manageTab">
+        <div class="content-list" id="contentList">
+          <div class="content-item">
+            <div class="info">
+              <div class="meta">جاري تحميل المحتوى...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+// Check if already logged in
+window.onload = function() {
+  const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
+  if (isLoggedIn === 'true') {
+    showDashboard();
+  }
+};
+
+function login() {
+  const password = document.getElementById('adminPassword').value;
+  const errorDiv = document.getElementById('loginError');
+  
+  // Call backend to verify password
+  fetch('/.netlify/functions/admin-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      sessionStorage.setItem('adminLoggedIn', 'true');
+      sessionStorage.setItem('adminToken', data.token);
+      showDashboard();
+    } else {
+      errorDiv.textContent = 'كلمة مرور خاطئة';
+    }
+  })
+  .catch(err => {
+    errorDiv.textContent = 'حدث خطأ. حاول مرة أخرى';
+  });
+}
+
+function logout() {
+  sessionStorage.removeItem('adminLoggedIn');
+  sessionStorage.removeItem('adminToken');
+  document.getElementById('loginBox').style.display = 'block';
+  document.getElementById('dashboard').classList.remove('active');
+}
+
+function showDashboard() {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('dashboard').classList.add('active');
+  loadStats();
+  loadContent();
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  
+  event.target.classList.add('active');
+  document.getElementById(tab + 'Tab').classList.add('active');
+  
+  if (tab === 'manage') loadContent();
+}
+
+function toggleContentFields() {
+  const type = document.getElementById('contentType').value;
+  const categoryGroup = document.getElementById('categoryGroup');
+  const seriesNameGroup = document.getElementById('seriesNameGroup');
+  const genreGroup = document.getElementById('genreGroup');
+  
+  if (type === 'movie') {
+    categoryGroup.style.display = 'block';
+    seriesNameGroup.style.display = 'none';
+    genreGroup.style.display = 'none';
+  } else {
+    categoryGroup.style.display = 'none';
+    seriesNameGroup.style.display = 'block';
+    genreGroup.style.display = 'block';
+  }
+}
+
+async function loadStats() {
+  const token = sessionStorage.getItem('adminToken');
+  
+  try {
+    const res = await fetch('/.netlify/functions/admin-stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    document.getElementById('totalViews').textContent = data.totalViews || 0;
+    document.getElementById('totalHours').textContent = data.totalHours || 0;
+    document.getElementById('todayVisitors').textContent = data.todayVisitors || 0;
+    document.getElementById('totalMovies').textContent = data.totalMovies || 0;
+    document.getElementById('topContent').textContent = data.topContent || 'لا توجد بيانات';
+  } catch (err) {
+    console.error('Error loading stats:', err);
+  }
+}
+
+async function loadContent() {
+  const token = sessionStorage.getItem('adminToken');
+  const listDiv = document.getElementById('contentList');
+  
+  try {
+    const res = await fetch('/.netlify/functions/admin-content', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    if (!data.movies || data.movies.length === 0) {
+      listDiv.innerHTML = '<div class="content-item"><div class="info"><div class="meta">لا يوجد محتوى</div></div></div>';
+      return;
+    }
+    
+    listDiv.innerHTML = data.movies.map(item => `
+      <div class="content-item">
+        <div class="info">
+          <div class="title">${item.title || 'بدون عنوان'}</div>
+          <div class="meta">${item.category || 'فيلم'} • ${item.id}</div>
+        </div>
+        <div class="actions">
+          <button class="btn-delete" onclick="deleteContent('${item.id}')">حذف</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Error loading content:', err);
+  }
+}
+
+async function uploadContent() {
+  const token = sessionStorage.getItem('adminToken');
+  const type = document.getElementById('contentType').value;
+  
+  const data = {
+    type,
+    title: document.getElementById('title').value,
+    url: document.getElementById('videoUrl').value,
+    image: document.getElementById('posterUrl').value,
+    category: type === 'movie' ? document.getElementById('category').value : null,
+    seriesName: type !== 'movie' ? document.getElementById('seriesName').value : null,
+    genre: type !== 'movie' ? document.getElementById('genre').value : null,
+    subtitles: document.getElementById('subtitles').value.split('\n').filter(s => s.trim())
+  };
+  
+  if (!data.title || !data.url) {
+    alert('الرجاء ملء الحقول المطلوبة');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/.netlify/functions/admin-upload', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    
+    if (result.success) {
+      const msg = document.getElementById('successMsg');
+      msg.textContent = 'تم إضافة المحتوى بنجاح!';
+      msg.style.display = 'block';
+      
+      // Clear form
+      document.getElementById('title').value = '';
+      document.getElementById('videoUrl').value = '';
+      document.getElementById('posterUrl').value = '';
+      document.getElementById('subtitles').value = '';
+      
+      setTimeout(() => msg.style.display = 'none', 3000);
+    } else {
+      alert('حدث خطأ: ' + (result.error || 'خطأ غير معروف'));
+    }
+  } catch (err) {
+    alert('حدث خطأ في الاتصال');
+    console.error(err);
+  }
+}
+
+async function deleteContent(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا المحتوى؟')) return;
+  
+  const token = sessionStorage.getItem('adminToken');
+  
+  try {
+    const res = await fetch('/.netlify/functions/admin-delete', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id })
+    });
+    
+    const result = await res.json();
+    
+    if (result.success) {
+      loadContent();
+    } else {
+      alert('فشل الحذف');
+    }
+  } catch (err) {
+    alert('حدث خطأ');
+  }
+}
+</script>
+
+</body>
+</html>
