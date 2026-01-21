@@ -30,27 +30,38 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Read analytics from Redis or file storage
-    const { createClient } = require('@upstash/redis');
+    const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+    const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
     
-    const redis = createClient({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN
-    });
+    let totalViews = 0;
+    let totalHours = 0;
+    let todayVisitors = 0;
     
-    // Get analytics data
-    const totalViews = await redis.get('analytics:totalViews') || 0;
-    const totalHours = await redis.get('analytics:totalHours') || 0;
-    const todayKey = `analytics:visitors:${new Date().toISOString().split('T')[0]}`;
-    const todayVisitors = await redis.get(todayKey) || 0;
+    if (REDIS_URL && REDIS_TOKEN) {
+      // Helper function to call Redis REST API
+      async function redisGet(key) {
+        try {
+          const response = await fetch(`${REDIS_URL}/GET/${key}`, {
+            headers: { 'Authorization': `Bearer ${REDIS_TOKEN}` }
+          });
+          const data = await response.json();
+          return data.result || 0;
+        } catch (e) {
+          return 0;
+        }
+      }
+      
+      // Get analytics data
+      totalViews = await redisGet('analytics:totalViews');
+      totalHours = await redisGet('analytics:totalHours');
+      const todayKey = `analytics:visitors:${new Date().toISOString().split('T')[0]}`;
+      todayVisitors = await redisGet(todayKey);
+    }
     
     // Get total movies count
     const catalogPath = path.join(process.cwd(), 'functions/data/catalog.txt');
     const catalogContent = fs.existsSync(catalogPath) ? fs.readFileSync(catalogPath, 'utf-8') : '';
     const totalMovies = catalogContent.split('\n').filter(line => line.trim()).length;
-    
-    // Get top content
-    const topContent = await redis.get('analytics:topContent') || 'لا توجد بيانات';
     
     return {
       statusCode: 200,
@@ -60,14 +71,14 @@ exports.handler = async (event) => {
         totalHours: Math.round((parseInt(totalHours) || 0) / 3600), // Convert seconds to hours
         todayVisitors: parseInt(todayVisitors) || 0,
         totalMovies,
-        topContent
+        topContent: 'قريباً'
       })
     };
     
   } catch (error) {
     console.error('Stats error:', error);
     
-    // Fallback to mock data if Redis fails
+    // Fallback to zero data if error
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
