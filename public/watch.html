@@ -477,6 +477,37 @@
     alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
   }
 
+  // Track analytics
+  async function trackView(action, duration = 0) {
+    try {
+      await fetch('/.netlify/functions/track-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, action, duration })
+      });
+    } catch (e) {
+      console.log('Analytics tracking failed');
+    }
+  }
+
+  // Track when video starts
+  if (video.style.display === 'block') {
+    video.addEventListener('play', () => trackView('start'), { once: true });
+    
+    // Track watch duration every 30 seconds
+    let lastTime = 0;
+    setInterval(() => {
+      if (!video.paused && video.currentTime > lastTime) {
+        const duration = video.currentTime - lastTime;
+        trackView('progress', duration);
+        lastTime = video.currentTime;
+      }
+    }, 30000);
+  } else if (frame.style.display === 'block') {
+    // Track Bunny video start
+    trackView('start');
+  }
+
 })();
 </script>
 </body>
