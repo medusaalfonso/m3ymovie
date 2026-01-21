@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 
 function verifyAdmin(authHeader) {
@@ -18,6 +16,16 @@ function verifyAdmin(authHeader) {
 function generateId(prefix = 'm') {
   const hash = crypto.randomBytes(4).toString('hex');
   return `${prefix}_${hash}`;
+}
+
+async function redisCommand(command, ...args) {
+  const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+  const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  const response = await fetch(`${REDIS_URL}/${command}/${args.map(a => encodeURIComponent(a)).join('/')}`, {
+    headers: { 'Authorization': `Bearer ${REDIS_TOKEN}` }
+  });
+  return response.json();
 }
 
 exports.handler = async (event) => {
@@ -45,40 +53,82 @@ exports.handler = async (event) => {
       };
     }
 
-    // Determine which file to append to
-    let filePath, line;
+    let item;
     
     if (type === 'movie') {
-      // Add to catalog.txt
-      filePath = path.join(process.cwd(), 'functions/data/catalog.txt');
-      line = `${title}|${url}|${image}|${category}`;
+      // Create movie object
+      item = {
+        id: generateId('m'),
+        title,
+        url,
+        image: image || '',
+        category: category || 'أفلام',
+        type: 'movie'
+      };
       
-    } else if (type === 'series') {
-      // Add to series.txt
-      filePath = path.join(process.cwd(), 'functions/data/series.txt');
-      const subsStr = Array.isArray(subtitles) ? subtitles.join(',') : '';
-      line = `${seriesName}|${title}|${url}|${image}|${genre}|${subsStr}`;
+      // Store in Redis
+      await redisCommand('HSET', `movie:${item.id}`, 
+        'id', item.id,
+        'title', item.title,
+        'url', item.url,
+        'image', item.image,
+        'category', item.category,
+        'type', item.type
+      );
       
-    } else if (type === 'foreign') {
-      // Add to foreign-series.txt
-      filePath = path.join(process.cwd(), 'functions/data/foreign-series.txt');
-      const subsStr = Array.isArray(subtitles) ? subtitles.join(',') : '';
-      line = `${seriesName}|${title}|${url}|${image}|${subsStr}`;
+      // Add to movies list
+      await redisCommand('SADD', 'catalog:movies', item.id);
+      
+    } else if (type === 'series' || type === 'foreign') {
+      // Create episode object
+      const episodeId = generateId('e');
+      const seriesId = generateId('s');
+      
+      item = {
+        id: episodeId,
+        seriesId,
+        seriesTitle: seriesName,
+        title,
+        url,
+        image: image || '',
+        genre: genre || '',
+        subs: subtitles || [],
+        type: type === 'foreign' ? 'foreign_episode' : 'episode'
+      };
+      
+      // Store episode in Redis
+      await redisCommand('HSET', `episode:${episodeId}`,
+        'id', episodeId,
+        'seriesId', seriesId,
+        'seriesTitle', seriesName,
+        'title', title,
+        'url', url,
+        'image', image || '',
+        'genre', genre || '',
+        'subs', JSON.stringify(subtitles || []),
+        'type', item.type
+      );
+      
+      // Add to series episodes list
+      await redisCommand('SADD', `series:${seriesId}:episodes`, episodeId);
+      
+      // Store series info
+      await redisCommand('HSET', `series:${seriesId}`,
+        'id', seriesId,
+        'title', seriesName,
+        'image', image || '',
+        'genre', genre || ''
+      );
+      
+      // Add to series list
+      const listKey = type === 'foreign' ? 'catalog:foreign' : 'catalog:series';
+      await redisCommand('SADD', listKey, seriesId);
     }
-
-    // Ensure directory exists
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    // Append to file
-    fs.appendFileSync(filePath, line + '\n', 'utf-8');
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, message: 'Content added successfully' })
+      body: JSON.stringify({ success: true, message: 'Content added successfully', id: item.id })
     };
 
   } catch (error) {
