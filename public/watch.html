@@ -7,372 +7,570 @@
 
   <style>
     :root{
-      --bg:#0b0e14;
-      --panel:#111624;
-      --text:#e8ecf5;
-      --muted:#9aa4b2;
-      --accent:#6ea8fe;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius: 14px;
+      --bg:#0b1020;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.08);
+      --text:#e9eefc;
+      --muted:rgba(233,238,252,.7);
+      --accent:#7c5cff;
+      --border:rgba(255,255,255,.12);
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --radius:22px;
     }
-
-    html,body{height:100%}
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans Arabic", sans-serif;
-      background: radial-gradient(1200px 600px at 50% 0%, rgba(110,168,254,.18), transparent 60%), var(--bg);
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(900px 500px at 70% 10%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(700px 450px at 10% 30%, rgba(72,200,255,.12), transparent 55%),
+        var(--bg);
       color:var(--text);
+      min-height:100vh;
     }
-
     .wrap{
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 18px 14px 24px;
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px 14px 40px;
     }
-
-    .top{
+    .topbar{
       display:flex;
       gap:12px;
       align-items:center;
       justify-content:space-between;
-      margin-bottom: 14px;
+      margin-bottom:14px;
     }
-
     .title{
-      font-size: 16px;
-      color: var(--text);
-      font-weight: 700;
-      line-height: 1.4;
-      margin:0;
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:18px;
+      line-height:1.2;
+      color:var(--text);
       opacity:.95;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      max-width: 72vw;
     }
-
-    .hint{
-      font-size: 12px;
-      color: var(--muted);
-      margin:0;
+    .btn{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: 0 8px 22px rgba(0,0,0,.18);
+      transition: transform .12s ease, border-color .12s ease;
+      user-select:none;
     }
+    .btn:hover{transform:translateY(-1px); border-color:rgba(255,255,255,.2)}
 
     .playerCard{
-      position:relative;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border: 1px solid rgba(255,255,255,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border:1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
+      position:relative;
     }
 
-    .ratio{
+    /* Video/iframe area */
+    .stage{
       position:relative;
       width:100%;
-      padding-top: 56.25%; /* 16:9 */
+      aspect-ratio: 16 / 9;
       background:#000;
     }
-
     video, iframe{
-      position:absolute;
-      inset:0;
       width:100%;
       height:100%;
-      border:0;
+      display:block;
       background:#000;
     }
+    iframe{border:0}
 
-    video{
-      outline:none;
-    }
-
-    /* Make captions a bit smaller */
-    video::cue {
-      font-size: 0.85em;
-      line-height: 1.2;
-    }
-
+    /* Clean overlay play button (only when autoplay is blocked) */
     .overlay{
       position:absolute;
       inset:0;
-      display:flex;
-      flex-direction:column;
+      display:none;
       align-items:center;
       justify-content:center;
-      gap:10px;
-      background: rgba(0,0,0,.55);
-      opacity:0;
-      pointer-events:none;
-      transition: .2s ease;
+      backdrop-filter: blur(2px);
+      background: radial-gradient(600px 350px at 50% 40%, rgba(0,0,0,.35), rgba(0,0,0,.65));
     }
-    .overlay.show{
-      opacity:1;
-      pointer-events:auto;
-    }
-
-    .btn{
-      appearance:none;
-      border:0;
-      background: var(--accent);
-      color:#061022;
+    .overlay.show{display:flex}
+    .overlayBtn{
+      border:1px solid rgba(255,255,255,.22);
+      background: linear-gradient(180deg, rgba(124,92,255,.35), rgba(124,92,255,.18));
+      color:var(--text);
+      padding:14px 18px;
+      border-radius:16px;
       font-weight:800;
-      padding: 10px 14px;
-      border-radius: 999px;
       cursor:pointer;
-      box-shadow: 0 10px 22px rgba(110,168,254,.25);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.55);
     }
-    .btn:active{transform: translateY(1px)}
+    .overlayBtn span{
+      display:inline-block;
+      width:0;height:0;
+      border-top:8px solid transparent;
+      border-bottom:8px solid transparent;
+      border-left:12px solid var(--text);
+      opacity:.95;
+    }
 
-    .small{
+    /* Captions: make them smaller + clean */
+    video::cue{
+      font-size: 14px;
+      line-height: 1.35;
+      color: #fff;
+      background: rgba(0,0,0,.55);
+      padding: .10em .35em;
+      border-radius: .35em;
+      text-shadow: 0 1px 2px rgba(0,0,0,.6);
+    }
+    /* optional: slightly bigger on big screens */
+    @media (min-width: 900px){
+      video::cue{ font-size: 15px; }
+    }
+
+    .meta{
+      padding:14px 14px 16px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      border-top:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.12);
+    }
+    .meta .left{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+    .meta .hint{
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 85vw;
+    }
+
+    .subsRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+    .pill{
       font-size:12px;
-      color: rgba(255,255,255,.8);
-      max-width: 90%;
-      text-align:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
     }
   </style>
+
+  <!-- hls.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="top">
-      <div>
-        <h1 id="pageTitle" class="title">المشاهدة</h1>
-        <p id="pageHint" class="hint"></p>
-      </div>
+    <div class="topbar">
+      <div class="title" id="pageTitle">المشاهدة</div>
+      <a class="btn" href="browse.html">رجوع للمكتبة</a>
     </div>
 
     <div class="playerCard">
-      <div class="ratio">
-        <video id="video" controls playsinline preload="metadata" style="display:none" crossorigin="anonymous"></video>
-        <iframe id="bunnyFrame" style="display:none" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+      <div class="stage" id="stage">
+        <video id="video" controls playsinline preload="metadata" style="display:none"></video>
+        <iframe id="bunnyFrame" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="display:none"></iframe>
 
-        <div id="overlay" class="overlay show">
-          <button id="overlayPlay" class="btn">تشغيل</button>
-          <div id="overlayMsg" class="small"></div>
+        <div class="overlay" id="overlay">
+          <button class="overlayBtn" id="overlayPlay">
+            <span></span>
+            تشغيل
+          </button>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="left">
+          <div class="hint" id="hint"> </div>
+          <div class="subsRow" id="subsRow" style="display:none"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- hls.js -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+(async function(){
+  const qs = new URLSearchParams(location.search);
+  const videoId = qs.get("id");
 
-  <script>
-(() => {
-  const params = new URLSearchParams(location.search);
-
-  // Prefer id-based playback (hides real URL), fallback to src if needed.
-  const type = (params.get("type") || "").toLowerCase(); // bunny | hls
-  const id = params.get("id"); // your internal id (recommended)
-  const src = params.get("src"); // direct URL fallback
-  const title = params.get("title") || "المشاهدة";
-  const poster = params.get("poster") || "";
-
-  // Optional subtitles:
-  // - subs JSON can be passed in localStorage by key: subkey
-  // - or as direct "sub" param (single vtt)
-  const subkey = params.get("subkey"); // localStorage key holding subs array
-  const directSub = params.get("sub"); // direct vtt URL (single)
-
-  const video = document.getElementById("video");
-  const frame = document.getElementById("bunnyFrame");
-  const pageTitle = document.getElementById("pageTitle");
-  const hint = document.getElementById("pageHint");
+  const elTitle = document.getElementById("pageTitle");
+  const elHint  = document.getElementById("hint");
+  const video   = document.getElementById("video");
+  const frame   = document.getElementById("bunnyFrame");
   const overlay = document.getElementById("overlay");
   const overlayPlay = document.getElementById("overlayPlay");
-  const overlayMsg = document.getElementById("overlayMsg");
+  const subsRow = document.getElementById("subsRow");
 
-  pageTitle.textContent = title;
-
-  let hls = null;
-
-  function showOverlay(message) {
-    overlayMsg.textContent = message || "";
-    overlay.classList.add("show");
-  }
-  function hideOverlay() {
-    overlay.classList.remove("show");
-    overlayMsg.textContent = "";
-  }
-
-  function setPoster() {
-    if (poster) {
-      video.setAttribute("poster", poster);
-    }
-  }
-
-  function parseSubs() {
-    let subs = [];
-    try {
-      if (subkey) {
-        const raw = localStorage.getItem(subkey);
-        if (raw) subs = JSON.parse(raw);
+  // ✅ Added: stopPlayback() used by your new protections
+  function stopPlayback(reason){
+    try{
+      // Pause HTML5 video if active
+      if (video && video.style.display !== "none"){
+        try{ video.pause(); }catch(e){}
+        try{ video.removeAttribute("src"); video.load(); }catch(e){}
       }
-    } catch (e) {}
+      // Stop Bunny iframe if active
+      if (frame && frame.style.display !== "none"){
+        try{ frame.src = "about:blank"; }catch(e){}
+      }
+    }catch(e){}
 
-    if (directSub) {
-      subs = [{ lang: "ar", label: "Arabic", url: directSub }];
-    }
-
-    // normalize (some catalogs use s1/s2...)
-    subs = Array.isArray(subs) ? subs : [];
-    return subs
-      .filter(s => s && s.url)
-      .map((s, i) => ({
-        lang: (s.lang || `s${i+1}`).toString(),
-        label: (s.label || `SUB ${i+1}`).toString(),
-        url: s.url.toString()
-      }));
+    // Show overlay so user understands why it stopped
+    try{
+      overlay.classList.add("show");
+      elHint.textContent = reason || "تم إيقاف التشغيل";
+    }catch(e){}
   }
 
-  function applyTracks(subs) {
-    // remove old tracks
-    [...video.querySelectorAll("track")].forEach(t => t.remove());
+  if (!videoId) {
+    elHint.textContent = "معرف الفيديو غير موجود";
+    return;
+  }
 
-    subs.forEach((s, idx) => {
-      const tr = document.createElement("track");
-      tr.kind = "subtitles";
-      tr.srclang = s.lang;
-      tr.label = s.label;
-      tr.src = s.url;
-      tr.default = idx === 0;
-      video.appendChild(tr);
-    });
+  // Show loading
+  overlay.classList.add("show");
+  elHint.textContent = "جاري التحميل...";
 
-    // Make first track show by default if available
-    try {
-      if (video.textTracks && video.textTracks.length) {
-        for (let i = 0; i < video.textTracks.length; i++) {
-          video.textTracks[i].mode = (i === 0) ? "showing" : "disabled";
+  try {
+    // Fetch video data from backend
+    const response = await fetch(`/.netlify/functions/get-video?id=${videoId}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to load video');
+    }
+
+    const videoData = await response.json();
+    const { title, url, poster, type } = videoData;
+
+    elTitle.textContent = title;
+
+    // Decide if Bunny embed
+    // Check if it's a full Bunny URL or just a GUID
+    const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(url);
+    const isBunnyEmbed = type === "bunny" || isBunnyGuid;
+
+    // =========================
+    // Bunny Player (iframe) with Token Authentication
+    // =========================
+    if (isBunnyEmbed){
+      frame.style.display = "block";
+      video.style.display = "none";
+
+      // Extract video ID from url (either full embed URL or just the GUID)
+      let bunnyVideoId = url;
+
+      // If url is a full embed URL, extract the video ID
+      const embedMatch = url.match(/embed\/(\d+)\/([a-f0-9\-]+)/i);
+      if (embedMatch) {
+        bunnyVideoId = embedMatch[2];
+      }
+      // Otherwise, url is already just the GUID, use it as is
+
+      // Request token from backend
+      async function loadBunnyVideo(videoId) {
+        try {
+          const tokenResponse = await fetch('/.netlify/functions/bunny-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoId })
+          });
+
+          if (!tokenResponse.ok) {
+            throw new Error('فشل في الحصول على توكن الفيديو');
+          }
+
+          const { token, expires, libraryId } = await tokenResponse.json();
+
+          // Build the authenticated iframe URL
+          const iframeSrc = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?token=${token}&expires=${expires}&autoplay=true&preload=true`;
+
+          frame.src = iframeSrc;
+          overlay.classList.remove("show");
+          elHint.textContent = "";
+
+        } catch (error) {
+          console.error('خطأ في تحميل الفيديو:', error);
+          elHint.textContent = "خطأ في تحميل الفيديو";
+          overlay.classList.remove("show");
+          alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
         }
       }
-    } catch (e) {}
-  }
 
-  async function fetchPlaybackById() {
-    // You should already have a netlify function or endpoint that returns:
-    // { type: "bunny"|"hls", src: "...", poster: "...", title:"...", subs:[...] }
-    // If you don't have it, keep using src in URL.
-    const url = `/.netlify/functions/play?id=${encodeURIComponent(id)}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("PLAYBACK_FETCH_FAILED");
-    return await res.json();
-  }
+      loadBunnyVideo(bunnyVideoId);
+      subsRow.style.display = "none";
 
-  function startBunny(embedUrl) {
-    video.style.display = "none";
-    frame.style.display = "block";
-
-    // Bunny embed must be allowed in CSP (frame-src)
-    frame.src = embedUrl;
-
-    hideOverlay();
-  }
-
-  function startHls(hlsUrl) {
-    frame.style.display = "none";
-    frame.src = "about:blank";
-    video.style.display = "block";
-
-    setPoster();
-    applyTracks(parseSubs());
-
-    if (hls) { try { hls.destroy(); } catch(e) {} hls = null; }
-
-    // Try native HLS first (Safari/iOS)
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = hlsUrl;
-    } else if (window.Hls && Hls.isSupported()) {
-      hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true
-      });
-      hls.loadSource(hlsUrl);
-      hls.attachMedia(video);
-    } else {
-      showOverlay("المتصفح لا يدعم HLS");
-      return;
-    }
-
-    hideOverlay();
-  }
-
-  async function autoPlayBestEffort() {
-    // Autoplay with sound is usually blocked by browsers.
-    // We'll attempt: play() -> if blocked, keep overlay visible.
-    try {
-      const p = video.play();
-      if (p && typeof p.then === "function") await p;
-    } catch (e) {
-      showOverlay("اضغط تشغيل");
-    }
-  }
-
-  overlayPlay.addEventListener("click", async () => {
-    hideOverlay();
-    try {
-      // If we are on video:
-      if (video.style.display !== "none") {
-        await video.play();
+      // =========================
+      // ✅ Your requested additions (2-5) - applied also for Bunny
+      // =========================
+      /* 2️⃣ تغيّر أجهزة الوسائط (OBS / Bandicam audio devices) */
+      if (navigator.mediaDevices) {
+        navigator.mediaDevices.ondevicechange = () => {
+          stopPlayback("تم اكتشاف جهاز وسائط جديد");
+        };
       }
-    } catch (e) {
-      showOverlay("اضغط تشغيل");
-    }
-  });
 
-  async function init() {
-    showOverlay("جاري التحميل...");
+      /* 3️⃣ كشف هبوط الأداء (FPS drop) */
+      let last = performance.now();
+      function fpsMonitor(now) {
+        if (now - last > 120) {
+          stopPlayback("انخفاض مفاجئ في الأداء (احتمال تسجيل)");
+          return;
+        }
+        last = now;
+        requestAnimationFrame(fpsMonitor);
+      }
+      requestAnimationFrame(fpsMonitor);
 
-    let playback = null;
+      /* 4️⃣ تعطيل Picture-in-Picture */
+      document.addEventListener("enterpictureinpicture", e => {
+        e.preventDefault();
+        stopPlayback("محاولة Picture-in-Picture");
+      });
 
-    if (id) {
-      playback = await fetchPlaybackById();
-    } else {
-      // fallback from URL params
-      playback = { type, src, poster, title, subs: null };
-    }
+      /* 5️⃣ حظر اختصارات شائعة */
+      document.addEventListener("keydown", e => {
+        if (
+          e.key === "F12" ||
+          (e.ctrlKey && ["S","I","J","U"].includes(e.key))
+        ) {
+          e.preventDefault();
+        }
+      });
 
-    if (!playback || !playback.src) {
-      showOverlay("رابط غير صالح");
       return;
     }
 
-    // Update title/poster if provided by server
-    if (playback.title) pageTitle.textContent = playback.title;
-    if (playback.poster) video.setAttribute("poster", playback.poster);
+    // =========================
+    // HLS / MP4 video (video tag)
+    // =========================
+    video.style.display = "block";
+    frame.style.display = "none";
 
-    // If server provides subs, store them into localStorage under subkey (if present) then load
-    if (Array.isArray(playback.subs) && playback.subs.length && subkey) {
-      try { localStorage.setItem(subkey, JSON.stringify(playback.subs)); } catch (e) {}
+    if (poster) video.poster = poster;
+
+    // Remove any old tracks (important when navigating between episodes)
+    function clearTracks(){
+      const tracks = video.querySelectorAll("track");
+      tracks.forEach(t => t.remove());
     }
 
-    const t = (playback.type || type || "").toLowerCase();
+    // Add VTT tracks (this makes the browser request the VTT)
+    function addTracks(subs){
+      clearTracks();
+      if (!Array.isArray(subs) || subs.length === 0){
+        subsRow.style.display = "none";
+        return;
+      }
 
-    if (t === "bunny") {
-      startBunny(playback.src);
-      // iframe autoplay is controlled by Bunny + browser policies.
-      hideOverlay();
-      return;
+      subsRow.style.display = "flex";
+      subsRow.innerHTML = "";
+
+      // Show a small hint pill list (not a debug URL)
+      subs.forEach((s, idx) => {
+        const pill = document.createElement("div");
+        pill.className = "pill";
+        pill.textContent = s.label || ("SUB " + (idx + 1));
+        subsRow.appendChild(pill);
+      });
+
+      // Create actual <track> elements
+      subs.forEach((s, idx) => {
+        if (!s || !s.url) return;
+
+        const track = document.createElement("track");
+        track.kind = "subtitles";
+        track.label = s.label || ("SUB " + (idx + 1));
+        // Use lang from json: "s1", "s2" ... (valid enough)
+        track.srclang = (s.lang || ("s" + (idx + 1))).toString().toLowerCase();
+        track.src = "/.netlify/functions/subtitleProxy?url=" + encodeURIComponent(s.url);
+
+        // Only first one default (so user sees it in CC menu)
+        if (idx === 0) track.default = true;
+
+        video.appendChild(track);
+      });
     }
 
-    // default to hls
-    startHls(playback.src);
-    await autoPlayBestEffort();
+    // Check if video data has subs
+    const subs = Array.isArray(videoData.subs) ? videoData.subs : [];
+    addTracks(subs);
+
+    // Load source with HLS.js if needed
+    let hls = null;
+    function loadVideoSource(url){
+      // if .m3u8 -> HLS.js or native (Safari)
+      const isM3U8 = url.includes(".m3u8") || type === "hls";
+
+      if (hls){
+        try{ hls.destroy(); }catch(e){}
+        hls = null;
+      }
+
+      if (isM3U8){
+        // Use proxy for external HLS streams to avoid CORS issues
+        const proxiedUrl = `/.netlify/functions/hls-proxy?url=${encodeURIComponent(url)}`;
+
+        if (video.canPlayType("application/vnd.apple.mpegurl")){
+          // Safari / iOS native - try original URL first, fallback to proxy if needed
+          video.src = url;
+          video.addEventListener('error', () => {
+            console.log('Direct playback failed, using proxy');
+            video.src = proxiedUrl;
+          }, { once: true });
+        } else if (window.Hls && Hls.isSupported()){
+          hls = new Hls({
+            enableWorker: true,
+            xhrSetup: function(xhr, url) {
+              // Add headers to help with CORS
+              xhr.withCredentials = false;
+            }
+          });
+          hls.loadSource(proxiedUrl);
+          hls.attachMedia(video);
+
+          hls.on(Hls.Events.ERROR, function(event, data) {
+            if (data.fatal) {
+              console.error('HLS error:', data);
+              switch(data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  console.log('Network error, attempting recovery...');
+                  hls.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  console.log('Media error, attempting recovery...');
+                  hls.recoverMediaError();
+                  break;
+                default:
+                  console.log('Fatal error, destroying HLS instance');
+                  hls.destroy();
+                  break;
+              }
+            }
+          });
+        } else {
+          // fallback: set src (may not work in many browsers)
+          video.src = proxiedUrl;
+        }
+      } else {
+        // mp4 direct
+        video.src = url;
+      }
+    }
+
+    loadVideoSource(url);
+
+    // Clean hint line (NO raw URL)
+    elHint.textContent = "";
+
+    // =========================
+    // Autoplay (no forced mute)
+    // =========================
+    async function tryAutoplay(){
+      // Some browsers block autoplay with sound.
+      // We try with sound. If it fails, show our overlay button.
+      try{
+        await video.play();
+        overlay.classList.remove("show");
+      }catch(err){
+        overlay.classList.add("show");
+      }
+    }
+
+    // Try after metadata/manifest is ready
+    video.addEventListener("loadedmetadata", tryAutoplay, { once:true });
+
+    // If using HLS.js, also try after manifest parsed
+    if (window.Hls && Hls.isSupported()){
+      // we might not have hls immediately, so poll briefly
+      const t0 = Date.now();
+      const timer = setInterval(() => {
+        if (hls){
+          clearInterval(timer);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            tryAutoplay();
+          });
+        } else if (Date.now() - t0 > 2000){
+          clearInterval(timer);
+        }
+      }, 50);
+    }
+
+    overlayPlay.addEventListener("click", async () => {
+      try{
+        // user gesture => should allow play with sound
+        await video.play();
+        overlay.classList.remove("show");
+      }catch(e){}
+    });
+
+  } catch (error) {
+    console.error('Error loading video:', error);
+    elHint.textContent = "خطأ في تحميل الفيديو";
+    overlay.classList.remove("show");
+    alert('خطأ في تحميل الفيديو. يرجى المحاولة مرة أخرى.');
   }
 
-  init().catch(() => {
-    showOverlay("حدث خطأ أثناء التشغيل");
-  });
-
-  // ===============================
-  // Anti-recording / anti-capture (best-effort, not foolproof)
-  // ===============================
-  function stopPlayback(reason) {
-    try { if (!video.paused) video.pause(); } catch (e) {}
-    try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
-    try { if (frame && frame.style.display !== 'none') { frame.src = 'about:blank'; } } catch (e) {}
-
+  // Track analytics
+  async function trackView(action, duration = 0) {
     try {
-      hint.textContent = reason || "تم إيقاف التشغيل";
-      overlay.classList.add("show");
-    } catch (e) {}
+      await fetch('/.netlify/functions/track-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, action, duration })
+      });
+    } catch (e) {
+      console.log('Analytics tracking failed');
+    }
   }
+
+  // Track when video starts
+  if (video.style.display === 'block') {
+    video.addEventListener('play', () => trackView('start'), { once: true });
+
+    // Track watch duration every 30 seconds
+    let lastTime = 0;
+    setInterval(() => {
+      if (!video.paused && video.currentTime > lastTime) {
+        const duration = video.currentTime - lastTime;
+        trackView('progress', duration);
+        lastTime = video.currentTime;
+      }
+    }, 30000);
+  } else if (frame.style.display === 'block') {
+    // Track Bunny video start
+    trackView('start');
+  }
+
+  // =========================
+  // ✅ Your requested additions (2-5) - applied for HLS/MP4 too
+  // =========================
 
   /* 2️⃣ تغيّر أجهزة الوسائط (OBS / Bandicam audio devices) */
   if (navigator.mediaDevices) {
@@ -403,13 +601,13 @@
   document.addEventListener("keydown", e => {
     if (
       e.key === "F12" ||
-      (e.ctrlKey && ["S","I","J","U"].includes(e.key.toUpperCase()))
+      (e.ctrlKey && ["S","I","J","U"].includes(e.key))
     ) {
       e.preventDefault();
     }
   });
 
 })();
-  </script>
+</script>
 </body>
 </html>
