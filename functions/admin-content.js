@@ -14,6 +14,23 @@ function verifyAdmin(authHeader) {
   }
 }
 
+async function redisCommand(command, ...args) {
+  const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+  const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  if (!REDIS_URL || !REDIS_TOKEN) return null;
+  
+  try {
+    const response = await fetch(`${REDIS_URL}/${command}/${args.map(a => encodeURIComponent(a)).join('/')}`, {
+      headers: { 'Authorization': `Bearer ${REDIS_TOKEN}` }
+    });
+    const data = await response.json();
+    return data.result;
+  } catch (e) {
+    return null;
+  }
+}
+
 exports.handler = async (event) => {
   if (!verifyAdmin(event.headers.authorization)) {
     return {
@@ -24,66 +41,70 @@ exports.handler = async (event) => {
   }
 
   try {
-    const catalogPath = path.join(process.cwd(), 'functions/data/catalog.txt');
-    const seriesPath = path.join(process.cwd(), 'functions/data/series.txt');
-    const foreignPath = path.join(process.cwd(), 'functions/data/foreign-series.txt');
-    
     let movies = [];
     
-    // Read movies
-    if (fs.existsSync(catalogPath)) {
-      const content = fs.readFileSync(catalogPath, 'utf-8');
-      movies = content.split('\n')
-        .filter(line => line.trim())
-        .map((line, idx) => {
-          const parts = line.split('|').map(p => p.trim());
-          return {
-            id: `m_${idx}`,
-            title: parts[0] || '',
-            url: parts[1] || '',
-            image: parts[2] || '',
-            category: parts[3] || 'أفلام',
-            type: 'movie'
-          };
-        });
+    // Get movies from Redis
+    const movieIds = await redisCommand('SMEMBERS', 'catalog:movies') || [];
+    
+    for (const movieId of movieIds) {
+      const movieData = await redisCommand('HGETALL', `movie:${movieId}`);
+      if (movieData && movieData.length > 0) {
+        const movie = {};
+        for (let i = 0; i < movieData.length; i += 2) {
+          movie[movieData[i]] = movieData[i + 1];
+        }
+        movies.push(movie);
+      }
     }
     
-    // Read series
-    if (fs.existsSync(seriesPath)) {
-      const content = fs.readFileSync(seriesPath, 'utf-8');
-      const seriesItems = content.split('\n')
-        .filter(line => line.trim())
-        .map((line, idx) => {
-          const parts = line.split('|').map(p => p.trim());
-          return {
-            id: `s_${idx}`,
-            title: `${parts[0]} - ${parts[1]}`,
-            url: parts[2] || '',
-            image: parts[3] || '',
-            category: 'مسلسل عربي',
+    // Get series from Redis
+    const seriesIds = await redisCommand('SMEMBERS', 'catalog:series') || [];
+    
+    for (const seriesId of seriesIds) {
+      const episodeIds = await redisCommand('SMEMBERS', `series:${seriesId}:episodes`) || [];
+      
+      for (const episodeId of episodeIds) {
+        const epData = await redisCommand('HGETALL', `episode:${episodeId}`);
+        if (epData && epData.length > 0) {
+          const episode = {};
+          for (let i = 0; i < epData.length; i += 2) {
+            episode[epData[i]] = epData[i + 1];
+          }
+          movies.push({
+            id: episode.id,
+            title: `${episode.seriesTitle} - ${episode.title}`,
+            url: episode.url,
+            image: episode.image,
+            category: 'مسلسل',
             type: 'series'
-          };
-        });
-      movies = [...movies, ...seriesItems];
+          });
+        }
+      }
     }
     
-    // Read foreign series
-    if (fs.existsSync(foreignPath)) {
-      const content = fs.readFileSync(foreignPath, 'utf-8');
-      const foreignItems = content.split('\n')
-        .filter(line => line.trim())
-        .map((line, idx) => {
-          const parts = line.split('|').map(p => p.trim());
-          return {
-            id: `f_${idx}`,
-            title: `${parts[0]} - ${parts[1]}`,
-            url: parts[2] || '',
-            image: parts[3] || '',
+    // Get foreign series from Redis
+    const foreignIds = await redisCommand('SMEMBERS', 'catalog:foreign') || [];
+    
+    for (const seriesId of foreignIds) {
+      const episodeIds = await redisCommand('SMEMBERS', `series:${seriesId}:episodes`) || [];
+      
+      for (const episodeId of episodeIds) {
+        const epData = await redisCommand('HGETALL', `episode:${episodeId}`);
+        if (epData && epData.length > 0) {
+          const episode = {};
+          for (let i = 0; i < epData.length; i += 2) {
+            episode[epData[i]] = epData[i + 1];
+          }
+          movies.push({
+            id: episode.id,
+            title: `${episode.seriesTitle} - ${episode.title}`,
+            url: episode.url,
+            image: episode.image,
             category: 'مسلسل أجنبي',
             type: 'foreign'
-          };
-        });
-      movies = [...movies, ...foreignItems];
+          });
+        }
+      }
     }
     
     return {
