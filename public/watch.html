@@ -228,27 +228,6 @@
   const overlayPlay = document.getElementById("overlayPlay");
   const subsRow = document.getElementById("subsRow");
 
-  // ✅ Added: stopPlayback() used by your new protections
-  function stopPlayback(reason){
-    try{
-      // Pause HTML5 video if active
-      if (video && video.style.display !== "none"){
-        try{ video.pause(); }catch(e){}
-        try{ video.removeAttribute("src"); video.load(); }catch(e){}
-      }
-      // Stop Bunny iframe if active
-      if (frame && frame.style.display !== "none"){
-        try{ frame.src = "about:blank"; }catch(e){}
-      }
-    }catch(e){}
-
-    // Show overlay so user understands why it stopped
-    try{
-      overlay.classList.add("show");
-      elHint.textContent = reason || "تم إيقاف التشغيل";
-    }catch(e){}
-  }
-
   if (!videoId) {
     elHint.textContent = "معرف الفيديو غير موجود";
     return;
@@ -272,7 +251,6 @@
     elTitle.textContent = title;
 
     // Decide if Bunny embed
-    // Check if it's a full Bunny URL or just a GUID
     const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(url);
     const isBunnyEmbed = type === "bunny" || isBunnyGuid;
 
@@ -325,45 +303,9 @@
 
       loadBunnyVideo(bunnyVideoId);
       subsRow.style.display = "none";
-
-      // =========================
-      // ✅ Your requested additions (2-5) - applied also for Bunny
-      // =========================
-      /* 2️⃣ تغيّر أجهزة الوسائط (OBS / Bandicam audio devices) */
-      if (navigator.mediaDevices) {
-        navigator.mediaDevices.ondevicechange = () => {
-          stopPlayback("تم اكتشاف جهاز وسائط جديد");
-        };
-      }
-
-      /* 3️⃣ كشف هبوط الأداء (FPS drop) */
-      let last = performance.now();
-      function fpsMonitor(now) {
-        if (now - last > 120) {
-          stopPlayback("انخفاض مفاجئ في الأداء (احتمال تسجيل)");
-          return;
-        }
-        last = now;
-        requestAnimationFrame(fpsMonitor);
-      }
-      requestAnimationFrame(fpsMonitor);
-
-      /* 4️⃣ تعطيل Picture-in-Picture */
-      document.addEventListener("enterpictureinpicture", e => {
-        e.preventDefault();
-        stopPlayback("محاولة Picture-in-Picture");
-      });
-
-      /* 5️⃣ حظر اختصارات شائعة */
-      document.addEventListener("keydown", e => {
-        if (
-          e.key === "F12" ||
-          (e.ctrlKey && ["S","I","J","U"].includes(e.key))
-        ) {
-          e.preventDefault();
-        }
-      });
-
+      
+      // Track Bunny video start
+      trackView('start');
       return;
     }
 
@@ -563,46 +505,27 @@
         lastTime = video.currentTime;
       }
     }, 30000);
-  } else if (frame.style.display === 'block') {
-    // Track Bunny video start
-    trackView('start');
   }
 
   // =========================
-  // ✅ Your requested additions (2-5) - applied for HLS/MP4 too
+  // Subtle Protection (Non-blocking)
   // =========================
-
-  /* 2️⃣ تغيّر أجهزة الوسائط (OBS / Bandicam audio devices) */
-  if (navigator.mediaDevices) {
-    navigator.mediaDevices.ondevicechange = () => {
-      stopPlayback("تم اكتشاف جهاز وسائط جديد");
-    };
+  
+  // Disable right-click on video area (doesn't stop playback)
+  const stage = document.getElementById('stage');
+  if (stage) {
+    stage.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      return false;
+    });
   }
 
-  /* 3️⃣ كشف هبوط الأداء (FPS drop) */
-  let last = performance.now();
-  function fpsMonitor(now) {
-    if (now - last > 120) {
-      stopPlayback("انخفاض مفاجئ في الأداء (احتمال تسجيل)");
-      return;
-    }
-    last = now;
-    requestAnimationFrame(fpsMonitor);
-  }
-  requestAnimationFrame(fpsMonitor);
-
-  /* 4️⃣ تعطيل Picture-in-Picture */
-  document.addEventListener("enterpictureinpicture", e => {
-    e.preventDefault();
-    stopPlayback("محاولة Picture-in-Picture");
-  });
-
-  /* 5️⃣ حظر اختصارات شائعة */
-  document.addEventListener("keydown", e => {
-    if (
-      e.key === "F12" ||
-      (e.ctrlKey && ["S","I","J","U"].includes(e.key))
-    ) {
+  // Disable common keyboard shortcuts (doesn't stop playback)
+  document.addEventListener('keydown', (e) => {
+    // Disable F12, Ctrl+Shift+I/J/C (DevTools)
+    if (e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) ||
+        (e.ctrlKey && e.key === 'U')) {
       e.preventDefault();
     }
   });
