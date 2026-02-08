@@ -117,12 +117,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // Determine if it's a Bunny video
-    // Check if URL is a Bunny embed URL OR just a GUID (32-36 chars with dashes)
-    const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(video.url);
-    const isBunny = video.url.includes('player.mediadelivery.net') || 
-                    video.url.includes('iframe.mediadelivery.net') ||
-                    isBunnyGuid;
+    // Determine video type based on URL
+    const videoType = detectVideoType(video.url);
 
     return {
       statusCode: 200,
@@ -132,7 +128,7 @@ exports.handler = async (event) => {
         url: video.url,
         poster: video.poster || video.image,
         subs: video.subs || [],
-        type: isBunny ? 'bunny' : 'hls'
+        type: videoType
       })
     };
 
@@ -144,3 +140,25 @@ exports.handler = async (event) => {
     };
   }
 };
+
+function detectVideoType(url) {
+  const urlLower = String(url || '').toLowerCase();
+  
+  // Check for Videas.fr embed
+  if (urlLower.includes('videas.fr/embed/')) {
+    return 'videas';
+  }
+  
+  // Check if URL is a Bunny embed URL OR just a GUID (32-36 chars with dashes)
+  const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(url);
+  const isBunnyEmbed = urlLower.includes('player.mediadelivery.net') || 
+                       urlLower.includes('iframe.mediadelivery.net') ||
+                       isBunnyGuid;
+  
+  if (isBunnyEmbed) {
+    return 'bunny';
+  }
+  
+  // Default to HLS
+  return 'hls';
+}
