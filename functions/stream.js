@@ -20,9 +20,15 @@ function isBunnyEmbed(url) {
   return u.includes("player.mediadelivery.net/embed/");
 }
 
+function isVideasEmbed(url) {
+  const u = String(url || "").toLowerCase();
+  return u.includes("videas.fr/embed/");
+}
+
 function detectKind(url) {
   const u = String(url || "").toLowerCase();
   if (isBunnyEmbed(u)) return "bunny_embed";
+  if (isVideasEmbed(u)) return "videas_embed";
   if (u.includes(".m3u8")) return "hls";
   if (u.includes(".mp4")) return "mp4";
   // fallback: many sources redirect to HLS
@@ -31,7 +37,7 @@ function detectKind(url) {
 
 function parseMovies(text) {
   // Movie format:
-  // Title | VIDEO_URL (m3u8 OR mp4 OR bunny embed) | Image_URL (optional) | Category (optional)
+  // Title | VIDEO_URL (m3u8 OR mp4 OR bunny embed OR videas embed) | Image_URL (optional) | Category (optional)
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
   for (const line of lines) {
