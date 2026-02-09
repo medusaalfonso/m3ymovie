@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>المكتبة</title>
+  <title>SahraVTN | المكتبة</title>
 
   <style>
     :root{
@@ -44,7 +44,29 @@
       display:flex; align-items:center; gap:10px; min-width:220px;
     }
     .logo{
+
+      display:flex;align-items:center;justify-content:center;
+    }
+    .logo span{
+      font-weight:800;
+      font-size:14px;
+      letter-spacing:.5px;
+      color:#06110a;
+      text-shadow: 0 1px 0 rgba(255,255,255,.35);
+      user-select:none;
+    }
+
+    /* Smart TV / old browser fallbacks */
+    .poster{ aspect-ratio:auto; padding-top:150%; }
+    .poster img{ position:absolute; top:0; left:0; right:0; bottom:0; }
+    @supports (aspect-ratio: 2/3){
+      .poster{ padding-top:0; aspect-ratio:2/3; }
+      .poster img{ position:static; }
+    }
+
+    .logo{
       width:38px; height:38px;
+
       border-radius:12px;
       background: linear-gradient(135deg, rgba(34,197,94,.9), rgba(56,189,248,.9));
       box-shadow: 0 10px 30px rgba(34,197,94,.12);
@@ -319,10 +341,10 @@
     <div class="wrap">
       <div class="row">
         <div class="brand">
-          <div class="logo"></div>
+          <div class="logo" aria-label="SahraVTN" title="SahraVTN"><span>SV</span></div>
           <div>
-            <h1>المكتبة</h1>
-            <p>أفلام + مسلسلات + مسلسلات أجنبية</p>
+            <h1>SahraVTN</h1>
+            <p>المكتبة • أفلام + مسلسلات + أجنبي</p>
           </div>
         </div>
 
@@ -363,207 +385,221 @@
   </div>
 
 <script>
-(() => {
-  const $ = (s) => document.querySelector(s);
+(function () {
+  'use strict';
 
-  const content = $("#content");
-  const q = $("#q");
-  const tabs = $("#tabs");
-  const modalBackdrop = $("#modalBackdrop");
-  const closeModal = $("#closeModal");
-  const modalTitle = $("#modalTitle");
-  const modalEpisodes = $("#modalEpisodes");
+  // ---- helpers / polyfills (Smart TV friendly) ----
+  function $(s) { return document.querySelector(s); }
 
-  const PAGE_SIZE = 10;
+  function safeText(v) { return (v == null ? '' : String(v)).replace(/^\s+|\s+$/g, ''); }
 
-  let state = {
-    tab: "films",
-    query: "",
+  function escapeHtml(str) {
+    str = (str == null ? '' : String(str));
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function closest(el, sel) {
+    // minimal closest polyfill
+    while (el && el.nodeType === 1) {
+      if (matches(el, sel)) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  function matches(el, sel) {
+    var p = Element.prototype;
+    var f = p.matches || p.webkitMatchesSelector || p.msMatchesSelector || p.mozMatchesSelector;
+    if (f) return f.call(el, sel);
+    // very old fallback
+    var nodes = (el.parentNode || document).querySelectorAll(sel);
+    for (var i = 0; i < nodes.length; i++) if (nodes[i] === el) return true;
+    return false;
+  }
+
+  function on(el, evt, fn) {
+    if (!el) return;
+    if (el.addEventListener) el.addEventListener(evt, fn, false);
+    else if (el.attachEvent) el.attachEvent('on' + evt, fn);
+  }
+
+  function fetchJSON(url, cb) {
+    // cb(err, data)
+    if (window.fetch) {
+      window.fetch(url, { cache: 'no-store' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (data) { cb(null, data); })
+        .catch(function (err) { cb(err); });
+      return;
+    }
+
+    // XHR fallback for older browsers / TVs
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('Cache-Control', 'no-cache');
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { cb(null, JSON.parse(xhr.responseText)); }
+        catch (e) { cb(e); }
+      } else {
+        cb(new Error('HTTP ' + xhr.status));
+      }
+    };
+    xhr.send(null);
+  }
+
+  // ---- DOM refs ----
+  var content = $('#content');
+  var q = $('#q');
+  var tabs = $('#tabs');
+  var modalBackdrop = $('#modalBackdrop');
+  var closeModal = $('#closeModal');
+  var modalTitle = $('#modalTitle');
+  var modalEpisodes = $('#modalEpisodes');
+
+  var PAGE_SIZE = 10;
+
+  var state = {
+    tab: 'films',
+    query: '',
     movies: [],
     series: [],
     foreign: [],
     pageByTab: {
-      "films": 1,
-      "tun-films": 1,
-      "series": 1,
-      "foreign": 1
+      'films': 1,
+      'tun-films': 1,
+      'series': 1,
+      'foreign': 1
     }
   };
 
-  function safeText(v){ return (v ?? "").toString().trim(); }
-  function isBunnyEmbed(url){
-    return typeof url === "string" && url.includes("player.mediadelivery.net/embed/");
-  }
-
-  function setTab(tab){
+  function setTab(tab) {
     state.tab = tab;
-    [...tabs.querySelectorAll(".tab")].forEach(el => el.classList.toggle("active", el.dataset.tab === tab));
+    var els = tabs ? tabs.querySelectorAll('.tab') : [];
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      if (el.classList) {
+        if (el.getAttribute('data-tab') === tab) el.classList.add('active');
+        else el.classList.remove('active');
+      } else {
+        // className fallback
+        el.className = el.className.replace(/\bactive\b/g, '');
+        if (el.getAttribute('data-tab') === tab) el.className += ' active';
+      }
+    }
     render();
   }
 
-  tabs.addEventListener("click", (e) => {
-    const t = e.target.closest(".tab");
-    if (!t) return;
-    setTab(t.dataset.tab);
-  });
-
-  q.addEventListener("input", () => {
-    state.query = q.value.trim().toLowerCase();
-    // reset page for current tab when searching
-    state.pageByTab[state.tab] = 1;
-    render();
-  });
-
-  closeModal.addEventListener("click", hideModal);
-  modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop) hideModal();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") hideModal();
-  });
-
-  function showModal(title, episodes, poster, seriesName, isForeign = false){
-    modalTitle.textContent = title;
-    modalEpisodes.innerHTML = "";
-
-    episodes.forEach((ep) => {
-      const epTitle = safeText(ep.title || ep.ep || "حلقة");
-      const episodeId = ep.id; // Use the existing ID from API
-      const subs = Array.isArray(ep.subs) ? ep.subs : [];
-
-      const el = document.createElement("div");
-      el.className = "ep";
-      el.innerHTML = `
-        <div class="dot"></div>
-        <div style="min-width:0">
-          <p class="ep-title">${escapeHtml(epTitle)}</p>
-          <p class="ep-sub">${subs.length ? `ترجمة: ${subs.length}` : "بدون ترجمة"}</p>
-        </div>
-      `;
-
-      el.addEventListener("click", () => {
-        location.href = `watch.html?id=${encodeURIComponent(episodeId)}`;
-      });
-
-      modalEpisodes.appendChild(el);
-    });
-
-    modalBackdrop.classList.add("show");
-    document.body.style.overflow = "hidden";
+  function matchesQuery(text) {
+    if (!state.query) return true;
+    return safeText(text).toLowerCase().indexOf(state.query) !== -1;
   }
 
-  function hideModal(){
-    modalBackdrop.classList.remove("show");
-    document.body.style.overflow = "";
-  }
-
-  function escapeHtml(str){
-    return (str ?? "").toString()
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  function card({title, image, badge, metaPills, onClick}){
-    const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `
-      <div class="poster">
-        ${image ? `<img loading="lazy" src="${escapeHtml(image)}" alt="">` : ``}
-        ${badge ? `<div class="badge">${escapeHtml(badge)}</div>` : ``}
-      </div>
-      <div class="body">
-        <p class="title">${escapeHtml(title)}</p>
-        <div class="meta">
-          ${(metaPills || []).map(p => `<span class="pill">${escapeHtml(p)}</span>`).join("")}
-        </div>
-      </div>
-    `;
-    el.addEventListener("click", onClick);
-    return el;
-  }
-
-  function section(title, itemsCount){
-    const head = document.createElement("div");
-    head.className = "section-head";
-    head.innerHTML = `
-      <h2>${escapeHtml(title)}</h2>
-      <div class="count">${itemsCount} عنصر</div>
-    `;
+  function section(title, itemsCount) {
+    var head = document.createElement('div');
+    head.className = 'section-head';
+    head.innerHTML =
+      '<h2>' + escapeHtml(title) + '</h2>' +
+      '<div class="count">' + itemsCount + ' عنصر</div>';
     return head;
   }
 
-  function grid(){
-    const el = document.createElement("div");
-    el.className = "grid";
+  function grid() {
+    var el = document.createElement('div');
+    el.className = 'grid';
     return el;
   }
 
-  function matchesQuery(text){
-    if (!state.query) return true;
-    return safeText(text).toLowerCase().includes(state.query);
+  function card(opts) {
+    var el = document.createElement('div');
+    el.className = 'card';
+
+    var image = safeText(opts.image);
+    var badge = safeText(opts.badge);
+
+    el.innerHTML =
+      '<div class="poster">' +
+        (image ? '<img src="' + escapeHtml(image) + '" alt="">' : '') +
+        (badge ? '<div class="badge">' + escapeHtml(badge) + '</div>' : '') +
+      '</div>' +
+      '<div class="body">' +
+        '<p class="title">' + escapeHtml(opts.title) + '</p>' +
+        '<div class="meta">' +
+          (opts.metaPills || []).map(function (p) {
+            return '<span class="pill">' + escapeHtml(p) + '</span>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+
+    on(el, 'click', opts.onClick);
+    return el;
   }
 
-  function paginate(items, tabKey){
-    const total = items.length;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    let page = state.pageByTab[tabKey] || 1;
+  function paginate(items, tabKey) {
+    var total = items.length;
+    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    var page = state.pageByTab[tabKey] || 1;
     if (page > totalPages) page = totalPages;
     if (page < 1) page = 1;
     state.pageByTab[tabKey] = page;
 
-    const start = (page - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    const slice = items.slice(start, end);
+    var start = (page - 1) * PAGE_SIZE;
+    var end = start + PAGE_SIZE;
+    var slice = items.slice(start, end);
 
-    return { slice, total, page, totalPages, startIndex: start };
+    return { slice: slice, total: total, page: page, totalPages: totalPages, startIndex: start };
   }
 
-  function renderPager({tabKey, total, page, totalPages, startIndex}){
-    // Don't show pager if only one page or nothing
+  function renderPager(info) {
+    var tabKey = info.tabKey, total = info.total, page = info.page, totalPages = info.totalPages, startIndex = info.startIndex;
     if (totalPages <= 1 && total <= PAGE_SIZE) return null;
 
-    const pager = document.createElement("div");
-    pager.className = "pager";
+    var pager = document.createElement('div');
+    pager.className = 'pager';
 
-    const from = total === 0 ? 0 : (startIndex + 1);
-    const to = Math.min(startIndex + PAGE_SIZE, total);
+    var from = total === 0 ? 0 : (startIndex + 1);
+    var to = Math.min(startIndex + PAGE_SIZE, total);
 
-    pager.innerHTML = `
-      <div class="info">عرض ${from} - ${to} من ${total}</div>
-      <div class="controls"></div>
-    `;
+    pager.innerHTML =
+      '<div class="info">عرض ' + from + ' - ' + to + ' من ' + total + '</div>' +
+      '<div class="controls"></div>';
 
-    const controls = pager.querySelector(".controls");
+    var controls = pager.querySelector('.controls');
 
-    const prev = document.createElement("button");
-    prev.className = "pbtn";
-    prev.textContent = "السابق";
+    var prev = document.createElement('button');
+    prev.className = 'pbtn';
+    prev.appendChild(document.createTextNode('السابق'));
     prev.disabled = page <= 1;
-    prev.addEventListener("click", () => {
+    on(prev, 'click', function () {
       state.pageByTab[tabKey] = Math.max(1, page - 1);
       render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo(0, 0);
     });
 
-    const next = document.createElement("button");
-    next.className = "pbtn";
-    next.textContent = "التالي";
+    var next = document.createElement('button');
+    next.className = 'pbtn';
+    next.appendChild(document.createTextNode('التالي'));
     next.disabled = page >= totalPages;
-    next.addEventListener("click", () => {
+    on(next, 'click', function () {
       state.pageByTab[tabKey] = Math.min(totalPages, page + 1);
       render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo(0, 0);
     });
 
     controls.appendChild(prev);
 
-    // Page numbers (show up to 7)
-    const maxNums = 7;
-    let startPage = Math.max(1, page - Math.floor(maxNums/2));
-    let endPage = Math.min(totalPages, startPage + maxNums - 1);
+    var maxNums = 7;
+    var startPage = Math.max(1, page - Math.floor(maxNums / 2));
+    var endPage = Math.min(totalPages, startPage + maxNums - 1);
     startPage = Math.max(1, endPage - maxNums + 1);
 
     if (startPage > 1) {
@@ -571,9 +607,7 @@
       if (startPage > 2) controls.appendChild(makeDots());
     }
 
-    for (let p = startPage; p <= endPage; p++){
-      controls.appendChild(makePageNum(tabKey, p, page));
-    }
+    for (var p = startPage; p <= endPage; p++) controls.appendChild(makePageNum(tabKey, p, page));
 
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) controls.appendChild(makeDots());
@@ -583,195 +617,271 @@
     controls.appendChild(next);
     return pager;
 
-    function makePageNum(tabKey, p, current){
-      const b = document.createElement("div");
-      b.className = "pnum" + (p === current ? " active" : "");
-      b.textContent = String(p);
-      b.addEventListener("click", () => {
-        state.pageByTab[tabKey] = p;
+    function makePageNum(tabKey2, p2, current) {
+      var b = document.createElement('div');
+      b.className = 'pnum' + (p2 === current ? ' active' : '');
+      b.appendChild(document.createTextNode(String(p2)));
+      on(b, 'click', function () {
+        state.pageByTab[tabKey2] = p2;
         render();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo(0, 0);
       });
       return b;
     }
-    function makeDots(){
-      const d = document.createElement("div");
-      d.className = "pnum";
-      d.textContent = "…";
-      d.style.cursor = "default";
+
+    function makeDots() {
+      var d = document.createElement('div');
+      d.className = 'pnum';
+      d.appendChild(document.createTextNode('…'));
+      d.style.cursor = 'default';
       return d;
     }
   }
 
-  // ----- Data loading -----
-  async function loadAll(){
-    await loadCatalog();
-    await loadForeignSeries();
-    render();
+  function showModal(title, episodes) {
+    modalTitle.textContent = title;
+    modalEpisodes.innerHTML = '';
+
+    for (var i = 0; i < episodes.length; i++) {
+      (function (ep) {
+        var epTitle = safeText(ep.title || ep.ep || 'حلقة');
+        var episodeId = ep.id;
+        var subs = Array.isArray(ep.subs) ? ep.subs : [];
+
+        var el = document.createElement('div');
+        el.className = 'ep';
+        el.innerHTML =
+          '<div class="dot"></div>' +
+          '<div style="min-width:0">' +
+            '<p class="ep-title">' + escapeHtml(epTitle) + '</p>' +
+            '<p class="ep-sub">' + (subs.length ? ('ترجمة: ' + subs.length) : 'بدون ترجمة') + '</p>' +
+          '</div>';
+
+        on(el, 'click', function () {
+          location.href = 'watch.html?id=' + encodeURIComponent(episodeId);
+        });
+
+        modalEpisodes.appendChild(el);
+      })(episodes[i]);
+    }
+
+    if (modalBackdrop.classList) modalBackdrop.classList.add('show');
+    else modalBackdrop.style.display = 'block';
+
+    document.body.style.overflow = 'hidden';
   }
 
-  async function loadCatalog(){
-    const url = `/.netlify/functions/catalog?t=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("catalog failed");
-    const data = await res.json();
+  function hideModal() {
+    if (modalBackdrop.classList) modalBackdrop.classList.remove('show');
+    else modalBackdrop.style.display = 'none';
 
-    if (data && typeof data === "object" && !Array.isArray(data)) {
-      // Use the existing IDs from the API response
-      state.movies = Array.isArray(data.movies) ? data.movies : [];
-      state.series = Array.isArray(data.series) ? data.series : [];
-      return;
-    }
-
-    const arr = Array.isArray(data) ? data : [];
-    state.movies = arr.filter(x => x.title && x.url);
-    state.series = arr.filter(x => x.seriesTitle || x.ep);
+    document.body.style.overflow = '';
   }
 
-  async function loadForeignSeries(){
-    const url = `/.netlify/functions/foreignSeries?t=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("foreignSeries failed");
-    const data = await res.json();
-    
-    // Use the IDs from the API response
-    state.foreign = Array.isArray(data) ? data : [];
+  function render() {
+    content.innerHTML = '';
+
+    if (state.tab === 'films') { renderFilms(false); return; }
+    if (state.tab === 'tun-films') { renderFilms(true); return; }
+    if (state.tab === 'series') { renderLocalSeries(); return; }
+    if (state.tab === 'foreign') { renderForeignSeries(); return; }
   }
 
-  // ----- Render -----
-  function render(){
-    content.innerHTML = "";
+  function renderFilms(tunisianOnly) {
+    var all = [];
+    for (var i = 0; i < state.movies.length; i++) {
+      var m = state.movies[i];
+      if (!matchesQuery(m.title)) continue;
+      var cat = safeText(m.category);
+      if (tunisianOnly) {
+        if (cat !== 'أفلام تونسية') continue;
+      } else {
+        if (cat !== 'أفلام') continue;
+      }
+      all.push(m);
+    }
 
-    if (state.tab === "films"){
-      renderFilms(false);
-      return;
-    }
-    if (state.tab === "tun-films"){
-      renderFilms(true);
-      return;
-    }
-    if (state.tab === "series"){
-      renderLocalSeries();
-      return;
-    }
-    if (state.tab === "foreign"){
-      renderForeignSeries();
-      return;
-    }
-  }
-
-  function renderFilms(tunisianOnly){
-    const all = state.movies
-      .filter(m => matchesQuery(m.title))
-      .filter(m => {
-        const cat = safeText(m.category);
-        if (!tunisianOnly) return true;
-        return cat === "أفلام تونسية";
-      })
-      .filter(m => tunisianOnly ? safeText(m.category) === "أفلام تونسية" : safeText(m.category) === "أفلام");
-
-    const title = tunisianOnly ? "أفلام تونسية" : "الأفلام";
+    var title = tunisianOnly ? 'أفلام تونسية' : 'الأفلام';
     content.appendChild(section(title, all.length));
 
-    const { slice, total, page, totalPages, startIndex } = paginate(all, tunisianOnly ? "tun-films" : "films");
+    var tabKey = tunisianOnly ? 'tun-films' : 'films';
+    var pg = paginate(all, tabKey);
 
-    const g = grid();
+    var g = grid();
+    for (var j = 0; j < pg.slice.length; j++) {
+      (function (m2) {
+        var titleTxt = safeText(m2.title);
+        var image = safeText(m2.image);
+        var movieId = m2.id;
 
-    slice.forEach((m) => {
-      const titleTxt = safeText(m.title);
-      const image = safeText(m.image);
-      const movieId = m.id;
-
-      g.appendChild(card({
-        title: titleTxt,
-        image,
-        badge: tunisianOnly ? "تونسية" : "فيلم",
-        metaPills: [ safeText(m.category) || "فيلم" ],
-        onClick: () => {
-          location.href = `watch.html?id=${encodeURIComponent(movieId)}`;
-        }
-      }));
-    });
-
-    content.appendChild(g);
-
-    const pager = renderPager({
-      tabKey: tunisianOnly ? "tun-films" : "films",
-      total, page, totalPages, startIndex
-    });
-    if (pager) content.appendChild(pager);
-  }
-
-  function renderLocalSeries(){
-    const all = state.series.filter(s => matchesQuery(s.title));
-
-    content.appendChild(section("المسلسلات", all.length));
-
-    const { slice, total, page, totalPages, startIndex } = paginate(all, "series");
-
-    const g = grid();
-
-    slice.forEach((s) => {
-      const seriesName = safeText(s.title);
-      const image = safeText(s.image);
-      const episodes = Array.isArray(s.episodes) ? s.episodes : [];
-
-      g.appendChild(card({
-        title: seriesName,
-        image,
-        badge: "مسلسل",
-        metaPills: [`${episodes.length} حلقة`],
-        onClick: () => showModal(seriesName, episodes, image, seriesName, false)
-      }));
-    });
+        g.appendChild(card({
+          title: titleTxt,
+          image: image,
+          badge: tunisianOnly ? 'تونسية' : 'فيلم',
+          metaPills: [ safeText(m2.category) || 'فيلم' ],
+          onClick: function () { location.href = 'watch.html?id=' + encodeURIComponent(movieId); }
+        }));
+      })(pg.slice[j]);
+    }
 
     content.appendChild(g);
 
-    const pager = renderPager({ tabKey:"series", total, page, totalPages, startIndex });
+    var pager = renderPager({ tabKey: tabKey, total: pg.total, page: pg.page, totalPages: pg.totalPages, startIndex: pg.startIndex });
     if (pager) content.appendChild(pager);
   }
 
-  function renderForeignSeries(){
-    const all = state.foreign.filter(s => matchesQuery(s.title));
+  function renderLocalSeries() {
+    var all = [];
+    for (var i = 0; i < state.series.length; i++) {
+      var s = state.series[i];
+      if (matchesQuery(s.title)) all.push(s);
+    }
 
-    content.appendChild(section("مسلسلات أجنبية", all.length));
+    content.appendChild(section('المسلسلات', all.length));
+    var pg = paginate(all, 'series');
 
-    const { slice, total, page, totalPages, startIndex } = paginate(all, "foreign");
+    var g = grid();
+    for (var j = 0; j < pg.slice.length; j++) {
+      (function (s2) {
+        var seriesName = safeText(s2.title);
+        var image = safeText(s2.image);
+        var episodes = Array.isArray(s2.episodes) ? s2.episodes : [];
 
-    const g = grid();
-
-    slice.forEach((s) => {
-      const seriesName = safeText(s.title);
-      const image = safeText(s.image);
-      const episodes = Array.isArray(s.episodes) ? s.episodes : [];
-
-      g.appendChild(card({
-        title: seriesName,
-        image,
-        badge: "أجنبي",
-        metaPills: [`${episodes.length} حلقة`],
-        onClick: () => showModal(seriesName, episodes, image, seriesName, true)
-      }));
-    });
+        g.appendChild(card({
+          title: seriesName,
+          image: image,
+          badge: 'مسلسل',
+          metaPills: [ String(episodes.length) + ' حلقة' ],
+          onClick: function () { showModal(seriesName, episodes); }
+        }));
+      })(pg.slice[j]);
+    }
 
     content.appendChild(g);
 
-    const pager = renderPager({ tabKey:"foreign", total, page, totalPages, startIndex });
+    var pager = renderPager({ tabKey: 'series', total: pg.total, page: pg.page, totalPages: pg.totalPages, startIndex: pg.startIndex });
     if (pager) content.appendChild(pager);
   }
 
-  // Start
-  loadAll().catch(() => {
-    content.innerHTML = `
-      <div class="notice" style="border-color: rgba(239,68,68,.35); color:#fca5a5">
-        حصل خطأ أثناء تحميل المكتبة. تأكد أن Functions تعمل وأن الروابط:
-        <br>/.netlify/functions/catalog
-        <br>/.netlify/functions/foreignSeries
-      </div>
-    `;
+  function renderForeignSeries() {
+    var all = [];
+    for (var i = 0; i < state.foreign.length; i++) {
+      var s = state.foreign[i];
+      if (matchesQuery(s.title)) all.push(s);
+    }
+
+    content.appendChild(section('مسلسلات أجنبية', all.length));
+    var pg = paginate(all, 'foreign');
+
+    var g = grid();
+    for (var j = 0; j < pg.slice.length; j++) {
+      (function (s2) {
+        var seriesName = safeText(s2.title);
+        var image = safeText(s2.image);
+        var episodes = Array.isArray(s2.episodes) ? s2.episodes : [];
+
+        g.appendChild(card({
+          title: seriesName,
+          image: image,
+          badge: 'أجنبي',
+          metaPills: [ String(episodes.length) + ' حلقة' ],
+          onClick: function () { showModal(seriesName, episodes); }
+        }));
+      })(pg.slice[j]);
+    }
+
+    content.appendChild(g);
+
+    var pager = renderPager({ tabKey: 'foreign', total: pg.total, page: pg.page, totalPages: pg.totalPages, startIndex: pg.startIndex });
+    if (pager) content.appendChild(pager);
+  }
+
+  // ---- events ----
+  on(tabs, 'click', function (e) {
+    e = e || window.event;
+    var target = e.target || e.srcElement;
+    var t = closest(target, '.tab');
+    if (!t) return;
+    setTab(t.getAttribute('data-tab'));
   });
+
+  on(q, 'input', function () {
+    state.query = safeText(q.value).toLowerCase();
+    state.pageByTab[state.tab] = 1;
+    render();
+  });
+
+  on(closeModal, 'click', hideModal);
+  on(modalBackdrop, 'click', function (e) {
+    e = e || window.event;
+    var target = e.target || e.srcElement;
+    if (target === modalBackdrop) hideModal();
+  });
+
+  on(document, 'keydown', function (e) {
+    e = e || window.event;
+    var key = e.key || e.keyCode;
+    if (key === 'Escape' || key === 27) hideModal();
+  });
+
+  // ---- data loading ----
+  function loadCatalog(done) {
+    var url = '/.netlify/functions/catalog?t=' + (new Date().getTime());
+    fetchJSON(url, function (err, data) {
+      if (err) return done(err);
+
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        state.movies = Array.isArray(data.movies) ? data.movies : [];
+        state.series = Array.isArray(data.series) ? data.series : [];
+        return done(null);
+      }
+
+      var arr = Array.isArray(data) ? data : [];
+      var movies = [];
+      var series = [];
+      for (var i = 0; i < arr.length; i++) {
+        var x = arr[i];
+        if (x && x.title && x.url) movies.push(x);
+        if (x && (x.seriesTitle || x.ep)) series.push(x);
+      }
+      state.movies = movies;
+      state.series = series;
+      done(null);
+    });
+  }
+
+  function loadForeignSeries(done) {
+    var url = '/.netlify/functions/foreignSeries?t=' + (new Date().getTime());
+    fetchJSON(url, function (err, data) {
+      if (err) return done(err);
+      state.foreign = Array.isArray(data) ? data : [];
+      done(null);
+    });
+  }
+
+  function boot() {
+    loadCatalog(function (err) {
+      if (err) return showLoadError();
+      loadForeignSeries(function (err2) {
+        if (err2) return showLoadError();
+        render();
+      });
+    });
+  }
+
+  function showLoadError() {
+    content.innerHTML =
+      '<div class="notice" style="border-color: rgba(239,68,68,.35); color:#fca5a5">' +
+      'حصل خطأ أثناء تحميل المكتبة. تأكد أن Functions تعمل وأن الروابط:' +
+      '<br>/.netlify/functions/catalog' +
+      '<br>/.netlify/functions/foreignSeries' +
+      '</div>';
+  }
+
+  boot();
 })();
 </script>
+
 
 </body>
 </html>
