@@ -149,6 +149,11 @@ function detectVideoType(url) {
     return 'videas';
   }
   
+  // Check for OK.ru embed
+  if (urlLower.includes('ok.ru/video') || urlLower.includes('ok.ru/live/')) {
+    return 'okru';
+  }
+  
   // Check if URL is a Bunny embed URL OR just a GUID (32-36 chars with dashes)
   const isBunnyGuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(url);
   const isBunnyEmbed = urlLower.includes('player.mediadelivery.net') || 
