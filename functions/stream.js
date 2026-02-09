@@ -12,14 +12,43 @@ function isVideasEmbed(url) {
   return u.includes("videas.fr/embed/");
 }
 
+function isOkRuEmbed(url) {
+  const u = String(url || "").toLowerCase();
+  return u.includes("ok.ru/video") || u.includes("ok.ru/live/");
+}
+
 function detectKind(url) {
   const u = String(url || "").toLowerCase();
   if (isBunnyEmbed(u)) return "bunny_embed";
   if (isVideasEmbed(u)) return "videas_embed";
+  if (isOkRuEmbed(u)) return "okru_embed";
   if (u.includes(".m3u8")) return "hls";
   if (u.includes(".mp4")) return "mp4";
   // fallback: many sources redirect to HLS
   return "hls";
+}
+
+// Convert OK.ru video URL to embed URL if needed
+function normalizeOkRuUrl(url) {
+  if (!url) return url;
+  
+  // If already an embed URL, return as is
+  if (url.includes('/videoembed/')) {
+    return url;
+  }
+  
+  // Convert regular video URL to embed URL
+  // https://ok.ru/video/1234567890123 -> https://ok.ru/videoembed/1234567890123
+  if (url.includes('ok.ru/video/')) {
+    return url.replace('/video/', '/videoembed/');
+  }
+  
+  // Handle live streams
+  if (url.includes('ok.ru/live/')) {
+    return url.replace('/live/', '/videoembed/');
+  }
+  
+  return url;
 }
 
 // Parse movies from catalog.txt
@@ -204,9 +233,11 @@ exports.handler = async (event) => {
         if (!item) return json(404, { error: "Not found" });
 
         const kind = detectKind(item.url);
+        const finalUrl = kind === "okru_embed" ? normalizeOkRuUrl(item.url) : item.url;
+
         return json(200, {
           title: item.title,
-          url: item.url,
+          url: finalUrl,
           kind,
           image: item.image || "",
           category: item.category || ""
@@ -219,9 +250,11 @@ exports.handler = async (event) => {
       
       if (movie && movie.url) {
         const kind = detectKind(movie.url);
+        const finalUrl = kind === "okru_embed" ? normalizeOkRuUrl(movie.url) : movie.url;
+        
         return json(200, {
           title: movie.title || "",
-          url: movie.url,
+          url: finalUrl,
           kind,
           image: movie.image || "",
           category: movie.category || ""
@@ -246,9 +279,11 @@ exports.handler = async (event) => {
         if (!ep) return json(404, { error: "Not found" });
 
         const kind = detectKind(ep.url);
+        const finalUrl = kind === "okru_embed" ? normalizeOkRuUrl(ep.url) : ep.url;
+
         return json(200, {
           title: `${ep.seriesTitle} — ${ep.title}`,
-          url: ep.url,
+          url: finalUrl,
           kind,
           image: ep.image || "",
           subs: ep.subs || []
@@ -261,6 +296,7 @@ exports.handler = async (event) => {
       
       if (episode && episode.url) {
         const kind = detectKind(episode.url);
+        const finalUrl = kind === "okru_embed" ? normalizeOkRuUrl(episode.url) : episode.url;
         
         // Parse subs if stored as JSON string
         let subs = [];
@@ -274,7 +310,7 @@ exports.handler = async (event) => {
         
         return json(200, {
           title: episode.title || "",
-          url: episode.url,
+          url: finalUrl,
           kind,
           subs: subs
         });
@@ -293,6 +329,7 @@ exports.handler = async (event) => {
       
       if (episode && episode.url) {
         const kind = detectKind(episode.url);
+        const finalUrl = kind === "okru_embed" ? normalizeOkRuUrl(episode.url) : episode.url;
         
         // Parse subs if stored as JSON string
         let subs = [];
@@ -306,7 +343,7 @@ exports.handler = async (event) => {
         
         return json(200, {
           title: episode.title || "",
-          url: episode.url,
+          url: finalUrl,
           kind,
           subs: subs
         });
@@ -321,9 +358,11 @@ exports.handler = async (event) => {
         
         if (foundEp) {
           const kind = detectKind(foundEp.url);
+          const finalUrl = kind === "okru_embed" ? normalizeOkRuUrl(foundEp.url) : foundEp.url;
+          
           return json(200, {
             title: foundEp.title || "",
-            url: foundEp.url,
+            url: finalUrl,
             kind,
             subs: foundEp.subs || []
           });
