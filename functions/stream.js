@@ -88,6 +88,35 @@ function parseEpisodes(text) {
   return eps;
 }
 
+// Redis helper function
+async function redisCommand(command, ...args) {
+  const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+  const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  if (!REDIS_URL || !REDIS_TOKEN) return null;
+  
+  try {
+    const response = await fetch(`${REDIS_URL}/${command}/${args.map(a => encodeURIComponent(a)).join('/')}`, {
+      headers: { 'Authorization': `Bearer ${REDIS_TOKEN}` }
+    });
+    const data = await response.json();
+    return data.result;
+  } catch (e) {
+    console.error('Redis error:', e);
+    return null;
+  }
+}
+
+// Convert Redis HGETALL array to object
+function parseRedisHash(arr) {
+  if (!arr || arr.length === 0) return null;
+  const obj = {};
+  for (let i = 0; i < arr.length; i += 2) {
+    obj[arr[i]] = arr[i + 1];
+  }
+  return obj;
+}
+
 exports.handler = async (event) => {
   try {
     const cookie = getCookie(event, "session");
@@ -98,17 +127,35 @@ exports.handler = async (event) => {
     const id = (event.queryStringParameters?.id || "").trim();
     if (!id) return json(400, { error: "Missing id" });
 
-    const moviesPath = path.join(__dirname, "data", "catalog.txt");
-    const seriesPath = path.join(__dirname, "data", "series.txt");
-
+    // ============================================
+    // STEP 1: Check Redis first (admin uploads)
+    // ============================================
+    
     if (id.startsWith("m_")) {
+      // Try to fetch from Redis
+      const redisData = await redisCommand('HGETALL', `movie:${id}`);
+      const movie = parseRedisHash(redisData);
+      
+      if (movie && movie.url) {
+        const kind = detectKind(movie.url);
+        return json(200, {
+          title: movie.title || "",
+          url: movie.url,
+          kind,
+          image: movie.image || "",
+          category: movie.category || ""
+        });
+      }
+      
+      // If not in Redis, check text files
+      const moviesPath = path.join(__dirname, "data", "catalog.txt");
       const raw = await fs.readFile(moviesPath, "utf-8");
       const movies = parseMovies(raw);
       const item = movies.find(x => x.id === id);
+      
       if (!item) return json(404, { error: "Not found" });
 
       const kind = detectKind(item.url);
-
       return json(200, {
         title: item.title,
         url: item.url,
@@ -119,13 +166,28 @@ exports.handler = async (event) => {
     }
 
     if (id.startsWith("e_")) {
+      // Try to fetch from Redis
+      const redisData = await redisCommand('HGETALL', `episode:${id}`);
+      const episode = parseRedisHash(redisData);
+      
+      if (episode && episode.url) {
+        const kind = detectKind(episode.url);
+        return json(200, {
+          title: episode.title || "",
+          url: episode.url,
+          kind
+        });
+      }
+      
+      // If not in Redis, check text files
+      const seriesPath = path.join(__dirname, "data", "series.txt");
       const raw = await fs.readFile(seriesPath, "utf-8");
       const eps = parseEpisodes(raw);
       const ep = eps.find(x => x.id === id);
+      
       if (!ep) return json(404, { error: "Not found" });
 
       const kind = detectKind(ep.url);
-
       return json(200, {
         title: ep.title,
         url: ep.url,
@@ -135,6 +197,7 @@ exports.handler = async (event) => {
 
     return json(400, { error: "Invalid id" });
   } catch (e) {
+    console.error('Stream error:', e);
     return json(500, { error: e.message || String(e) });
   }
 };
