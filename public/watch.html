@@ -72,6 +72,18 @@
       display: block;
     }
 
+    /* OK.ru Player */
+    #okru-player {
+      width: 100%;
+      height: 100%;
+      display: none;
+      border: none;
+    }
+
+    #okru-player.active {
+      display: block;
+    }
+
     .video-info {
       margin-top: 20px;
       padding: 20px;
@@ -108,6 +120,11 @@
 
     .cdn-badge.videas {
       background: #4a90e2;
+      color: white;
+    }
+
+    .cdn-badge.okru {
+      background: #ee8208;
       color: white;
     }
 
@@ -206,6 +223,13 @@
         allowfullscreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share">
       </iframe>
+
+      <!-- OK.ru Player -->
+      <iframe 
+        id="okru-player"
+        allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share">
+      </iframe>
     </div>
 
     <div class="video-info" id="videoInfo" style="display: none;">
@@ -255,6 +279,11 @@
             updateCDNBadge('videas', 'Videas.fr');
             break;
           
+          case 'okru_embed':
+            initOkRuPlayer(data.url);
+            updateCDNBadge('okru', 'OK.ru');
+            break;
+          
           case 'bunny_embed':
             initBunnyPlayer(data.url);
             updateCDNBadge('bunny', 'Bunny CDN');
@@ -280,6 +309,14 @@
       iframe.classList.add('active');
       
       console.log('Videas.fr player initialized:', embedUrl);
+    }
+
+    function initOkRuPlayer(embedUrl) {
+      const iframe = document.getElementById('okru-player');
+      iframe.src = embedUrl;
+      iframe.classList.add('active');
+      
+      console.log('OK.ru player initialized:', embedUrl);
     }
 
     function initBunnyPlayer(embedUrl) {
